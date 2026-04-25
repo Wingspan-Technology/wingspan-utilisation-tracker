@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   if (!session) return Response.json({ error: "Unauthorised" }, { status: 401 });
   if (session.role !== "ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });
 
-  const { projectId, name, description, color, isActive, isBillable } = await req.json();
+  const { projectId, name, isActive, isBillable } = await req.json();
   if (!projectId || !name) {
     return Response.json({ error: "Project and name are required" }, { status: 400 });
   }
@@ -42,8 +42,6 @@ export async function POST(req: NextRequest) {
     data: {
       projectId,
       name,
-      description: description || null,
-      color: color || "#6366f1",
       isActive: isActive ?? true,
       isBillable: isBillable ?? true,
     },

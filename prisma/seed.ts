@@ -2,6 +2,16 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 async function main() {
   console.log("Seeding database…");
 
@@ -45,44 +55,44 @@ async function main() {
   const wingspan = await prisma.client.upsert({
     where: { name: "Wingspan Internal" },
     update: {},
-    create: { name: "Wingspan Internal", isActive: true },
+    create: { name: "Wingspan Internal", slug: generateSlug("Wingspan Internal"), isActive: true },
   });
 
   const acme = await prisma.client.upsert({
     where: { name: "Acme Corp" },
     update: {},
-    create: { name: "Acme Corp", isActive: true },
+    create: { name: "Acme Corp", slug: generateSlug("Acme Corp"), isActive: true },
   });
 
   const beta = await prisma.client.upsert({
     where: { name: "Beta Ltd" },
     update: {},
-    create: { name: "Beta Ltd", isActive: true },
+    create: { name: "Beta Ltd", slug: generateSlug("Beta Ltd"), isActive: true },
   });
 
   // Projects
   const adminProj = await prisma.project.upsert({
     where: { clientId_name: { clientId: wingspan.id, name: "Admin & Operations" } },
     update: {},
-    create: { clientId: wingspan.id, name: "Admin & Operations", isActive: true },
+    create: { clientId: wingspan.id, name: "Admin & Operations", slug: generateSlug("Admin & Operations"), isActive: true },
   });
 
   const rdProj = await prisma.project.upsert({
     where: { clientId_name: { clientId: wingspan.id, name: "R&D" } },
     update: {},
-    create: { clientId: wingspan.id, name: "R&D", isActive: true },
+    create: { clientId: wingspan.id, name: "R&D", slug: generateSlug("R&D"), isActive: true },
   });
 
   const acmeWeb = await prisma.project.upsert({
     where: { clientId_name: { clientId: acme.id, name: "Website Redesign" } },
     update: {},
-    create: { clientId: acme.id, name: "Website Redesign", isActive: true },
+    create: { clientId: acme.id, name: "Website Redesign", slug: generateSlug("Website Redesign"), isActive: true },
   });
 
   const betaApp = await prisma.project.upsert({
     where: { clientId_name: { clientId: beta.id, name: "Mobile App" } },
     update: {},
-    create: { clientId: beta.id, name: "Mobile App", isActive: true },
+    create: { clientId: beta.id, name: "Mobile App", slug: generateSlug("Mobile App"), isActive: true },
   });
 
   // Tasks
@@ -90,27 +100,27 @@ async function main() {
     prisma.task.upsert({
       where: { projectId_name: { projectId: adminProj.id, name: "Meetings" } },
       update: {},
-      create: { projectId: adminProj.id, name: "Meetings", isBillable: false, color: "#64748b", isActive: true },
+      create: { projectId: adminProj.id, name: "Meetings", isBillable: false, isActive: true },
     }),
     prisma.task.upsert({
       where: { projectId_name: { projectId: rdProj.id, name: "Research" } },
       update: {},
-      create: { projectId: rdProj.id, name: "Research", isBillable: false, color: "#f97316", isActive: true },
+      create: { projectId: rdProj.id, name: "Research", isBillable: false, isActive: true },
     }),
     prisma.task.upsert({
       where: { projectId_name: { projectId: acmeWeb.id, name: "Development" } },
       update: {},
-      create: { projectId: acmeWeb.id, name: "Development", isBillable: true, color: "#6366f1", isActive: true },
+      create: { projectId: acmeWeb.id, name: "Development", isBillable: true, isActive: true },
     }),
     prisma.task.upsert({
       where: { projectId_name: { projectId: acmeWeb.id, name: "Design" } },
       update: {},
-      create: { projectId: acmeWeb.id, name: "Design", isBillable: true, color: "#8b5cf6", isActive: true },
+      create: { projectId: acmeWeb.id, name: "Design", isBillable: true, isActive: true },
     }),
     prisma.task.upsert({
       where: { projectId_name: { projectId: betaApp.id, name: "Development" } },
       update: {},
-      create: { projectId: betaApp.id, name: "Development", isBillable: true, color: "#22c55e", isActive: true },
+      create: { projectId: betaApp.id, name: "Development", isBillable: true, isActive: true },
     }),
   ]);
 

@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ListPicker } from "@/components/ui/list-picker";
 import { cn } from "@/lib/utils";
 import type { TimeEntry, Task } from "@/types";
 
@@ -22,71 +23,6 @@ const selectBase =
   "h-8 w-full appearance-none rounded-lg border bg-background text-foreground pl-2.5 pr-2.5 py-1 text-sm outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-25 disabled:bg-muted/40";
 const selectNormal = "border-input focus:border-ring";
 const selectError = "border-destructive focus:border-destructive";
-
-function ListPicker({
-  items,
-  value,
-  disabled,
-  hasError,
-  onChange,
-}: {
-  items: { id: string; name: string }[];
-  value: string;
-  disabled?: boolean;
-  hasError?: boolean;
-  onChange: (id: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const selected = items.find((i) => i.id === value) ?? null;
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    if (open) document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => !disabled && setOpen((o) => !o)}
-        className={cn(
-          selectBase,
-          hasError ? selectError : selectNormal,
-          "flex items-center gap-2 text-left",
-          !selected && "text-muted-foreground"
-        )}
-      >
-        <span className="flex-1">{selected ? selected.name : "Please select…"}</span>
-        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-      </button>
-      {open && (
-        <ul className="absolute z-50 mt-1 w-full rounded-lg border border-input bg-background shadow-lg overflow-hidden">
-          {items.map((item) => (
-            <li
-              key={item.id}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                onChange(item.id);
-                setOpen(false);
-              }}
-              className={cn(
-                "px-2.5 py-2.5 text-sm font-medium cursor-pointer hover:bg-muted/50",
-                item.id === value && "bg-muted/30"
-              )}
-            >
-              {item.name}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
 
 function TaskIcon({ isBillable }: { isBillable: boolean }) {
   return isBillable
@@ -146,7 +82,7 @@ function TaskPicker({
       </button>
 
       {open && (
-        <ul className="absolute z-50 mt-1 w-full rounded-lg border border-input bg-background shadow-lg overflow-hidden">
+        <ul className="absolute z-50 mt-1 w-full rounded-lg border border-input bg-background shadow-lg overflow-y-auto max-h-60">
           {tasks.map((t) => (
             <li
               key={t.id}
@@ -156,22 +92,15 @@ function TaskPicker({
                 setOpen(false);
               }}
               className={cn(
-                "flex flex-col px-2.5 py-2.5 text-sm cursor-pointer hover:bg-muted/50",
+                "flex items-center gap-2 px-2.5 py-2.5 text-sm cursor-pointer hover:bg-muted/50",
                 t.id === value && "bg-muted/30"
               )}
             >
+              {t.isBillable
+                ? <Banknote className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+                : <Leaf className="h-3.5 w-3.5 shrink-0 text-green-500" />
+              }
               <span className="font-medium">{t.name}</span>
-              <div className="mt-1.5">
-                {t.isBillable ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-950/80 px-2 py-0.5 text-xs font-medium text-blue-300">
-                    <Banknote className="h-3 w-3" /> Billable
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-green-950/80 px-2 py-0.5 text-xs font-medium text-green-400">
-                    <Leaf className="h-3 w-3" /> Non-billable
-                  </span>
-                )}
-              </div>
             </li>
           ))}
         </ul>
@@ -413,7 +342,7 @@ export function TimeEntryForm({
               value={form.hours}
               onChange={(e) => setForm({ ...form, hours: e.target.value })}
               placeholder="e.g. 3.5"
-              className={cn("bg-background dark:bg-background", attempted && errors.hours ? "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20" : "")}
+              className={cn(attempted && errors.hours ? "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20" : "")}
             />
             {attempted && errors.hours
               ? <FieldError />
@@ -429,7 +358,7 @@ export function TimeEntryForm({
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               rows={2}
-              className={cn("bg-background dark:bg-background", attempted && errors.description ? "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20" : "")}
+              className={cn(attempted && errors.description ? "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20" : "")}
             />
             {attempted && errors.description
               ? <FieldError />

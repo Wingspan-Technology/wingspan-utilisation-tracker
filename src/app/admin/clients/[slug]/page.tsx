@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import Link from "next/link";
-import { Eye, EyeOff, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { ArrowLeft, Eye, EyeOff, Pencil, Trash2 } from "lucide-react";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,81 +15,104 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ClientForm } from "@/components/admin/ClientForm";
+import { ProjectForm } from "@/components/admin/ProjectForm";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import type { Client } from "@/types";
+import type { Client, Project } from "@/types";
 
-export default function ClientsPage() {
+export default function ClientDetailPage({ params }: { params: { slug: string } }) {
   const router = useRouter();
-  const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { slug } = params;
+  const [client, setClient] = useState<Client | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [formOpen, setFormOpen] = useState(false);
-  const [editClient, setEditClient] = useState<Client | null>(null);
-  const [deleteClient, setDeleteClient] = useState<Client | null>(null);
+  const [editProject, setEditProject] = useState<Project | null>(null);
+  const [deleteProject, setDeleteProject] = useState<Project | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   async function load() {
-    const res = await fetch("/api/clients");
-    if (res.ok) setClients(await res.json());
-    setLoading(false);
+    const cr = await fetch(`/api/clients/${slug}`);
+    if (!cr.ok) return;
+    const clientData: Client = await cr.json();
+    setClient(clientData);
+
+    const pr = await fetch(`/api/projects?clientId=${clientData.id}`);
+    if (pr.ok) setProjects(await pr.json());
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, []); // eslint-disable-line
 
-  function handleSuccess(updated: Client) {
-    setClients((prev) => {
-      const idx = prev.findIndex((c) => c.id === updated.id);
+  function handleSuccess(updated: Project) {
+    setProjects((prev) => {
+      const idx = prev.findIndex((p) => p.id === updated.id);
       if (idx >= 0) { const next = [...prev]; next[idx] = updated; return next; }
       return [...prev, updated].sort((a, b) => a.name.localeCompare(b.name));
     });
-    setEditClient(null);
+    setEditProject(null);
   }
 
   async function handleDelete() {
-    if (!deleteClient) return;
+    if (!deleteProject) return;
     setDeleting(true);
-    const res = await fetch(`/api/clients/${deleteClient.id}`, { method: "DELETE" });
+    const res = await fetch(`/api/projects/${deleteProject.id}`, { method: "DELETE" });
     if (res.ok) {
-      setClients((prev) => prev.filter((c) => c.id !== deleteClient.id));
-      toast.success("Client deleted");
+      setProjects((prev) => prev.filter((p) => p.id !== deleteProject.id));
+      toast.success("Project deleted");
     } else {
       const data = await res.json();
-      toast.error(data.error || "Failed to delete client");
+      toast.error(data.error || "Failed to delete project");
     }
     setDeleting(false);
-    setDeleteClient(null);
+    setDeleteProject(null);
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Clients</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-foreground">
+              {client ? `${client.name} - Projects` : "…"}
+            </h1>
+            {client && !client.isActive && (
+              <EyeOff className="h-5 w-5 text-muted-foreground/50" />
+            )}
+          </div>
+          <Link
+            href="/admin/clients"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mt-1"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Clients
+          </Link>
         </div>
-        <Button onClick={() => { setEditClient(null); setFormOpen(true); }}>Add Client</Button>
+        <Button onClick={() => { setEditProject(null); setFormOpen(true); }}>
+          Add Project
+        </Button>
       </div>
 
       <div className="bg-card rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
+              <TableHead>Project</TableHead>
               <TableHead className="w-20" />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
-              <TableRow><TableCell colSpan={2} className="text-center text-muted-foreground py-8">Loading…</TableCell></TableRow>
-            ) : clients.length === 0 ? (
-              <TableRow><TableCell colSpan={2} className="text-center text-muted-foreground py-8">No clients yet.</TableCell></TableRow>
-            ) : clients.map((client) => (
-              <TableRow key={client.id}>
+            {projects.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
+                  No projects yet.
+                </TableCell>
+              </TableRow>
+            ) : projects.map((project) => (
+              <TableRow key={project.id}>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <Link href={`/admin/clients/${client.slug}`} className="font-medium hover:underline">
-                      {client.name}
+                    <Link href={`/admin/clients/${slug}/${project.slug}`} className="font-medium hover:underline">
+                      {project.name}
                     </Link>
-                    {!client.isActive && <EyeOff className="h-4 w-4 text-muted-foreground/50 shrink-0" />}
+                    {!project.isActive && <EyeOff className="h-4 w-4 text-muted-foreground/50 shrink-0" />}
                   </div>
                 </TableCell>
                 <TableCell>
@@ -97,7 +120,7 @@ export default function ClientsPage() {
                     <div className="flex gap-2 justify-end">
                       <Tooltip.Root>
                         <Tooltip.Trigger
-                          onClick={() => router.push(`/admin/clients/${client.slug}`)}
+                          onClick={() => router.push(`/admin/clients/${slug}/${project.slug}`)}
                           className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
                         >
                           <Eye className="h-5 w-5" />
@@ -105,14 +128,14 @@ export default function ClientsPage() {
                         <Tooltip.Portal>
                           <Tooltip.Positioner sideOffset={8}>
                             <Tooltip.Popup className="rounded-md bg-popover px-2 py-1 text-xs text-popover-foreground shadow-sm ring-1 ring-foreground/10">
-                              View client
+                              View project
                             </Tooltip.Popup>
                           </Tooltip.Positioner>
                         </Tooltip.Portal>
                       </Tooltip.Root>
                       <Tooltip.Root>
                         <Tooltip.Trigger
-                          onClick={() => { setEditClient(client); setFormOpen(true); }}
+                          onClick={() => { setEditProject(project); setFormOpen(true); }}
                           className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
                         >
                           <Pencil className="h-5 w-5" />
@@ -120,22 +143,22 @@ export default function ClientsPage() {
                         <Tooltip.Portal>
                           <Tooltip.Positioner sideOffset={8}>
                             <Tooltip.Popup className="rounded-md bg-popover px-2 py-1 text-xs text-popover-foreground shadow-sm ring-1 ring-foreground/10">
-                              Edit client
+                              Edit project
                             </Tooltip.Popup>
                           </Tooltip.Positioner>
                         </Tooltip.Portal>
                       </Tooltip.Root>
                       <Tooltip.Root>
                         <Tooltip.Trigger
-                          onClick={() => !client._count?.projects && setDeleteClient(client)}
-                          className={client._count?.projects ? "cursor-not-allowed opacity-30" : "cursor-pointer text-muted-foreground hover:text-red-400 transition-colors"}
+                          onClick={() => setDeleteProject(project)}
+                          className="cursor-pointer text-muted-foreground hover:text-red-400 transition-colors"
                         >
                           <Trash2 className="h-5 w-5" />
                         </Tooltip.Trigger>
                         <Tooltip.Portal>
                           <Tooltip.Positioner sideOffset={8}>
                             <Tooltip.Popup className="rounded-md bg-popover px-2 py-1 text-xs text-popover-foreground shadow-sm ring-1 ring-foreground/10">
-                              {client._count?.projects ? "Can't delete clients with projects" : "Delete client"}
+                              Delete project
                             </Tooltip.Popup>
                           </Tooltip.Positioner>
                         </Tooltip.Portal>
@@ -149,17 +172,18 @@ export default function ClientsPage() {
         </Table>
       </div>
 
-      <ClientForm
+      <ProjectForm
         open={formOpen}
-        onOpenChange={(v) => { setFormOpen(v); if (!v) setEditClient(null); }}
-        client={editClient}
+        onOpenChange={(v) => { setFormOpen(v); if (!v) setEditProject(null); }}
+        project={editProject}
+        defaultClientId={client?.id}
         onSuccess={handleSuccess}
       />
       <ConfirmDialog
-        open={!!deleteClient}
-        onOpenChange={(v) => !v && setDeleteClient(null)}
-        title="Delete Client"
-        description={`Delete ${deleteClient?.name}? This will fail if it has projects — deactivate instead.`}
+        open={!!deleteProject}
+        onOpenChange={(v) => !v && setDeleteProject(null)}
+        title="Delete Project"
+        description={`Delete "${deleteProject?.name}"? This will fail if it has tasks — deactivate instead.`}
         onConfirm={handleDelete}
         loading={deleting}
       />

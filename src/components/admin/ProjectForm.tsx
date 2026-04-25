@@ -7,44 +7,42 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ListPicker } from "@/components/ui/list-picker";
 import type { Client, Project } from "@/types";
 
 interface ProjectFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   project?: Project | null;
+  defaultClientId?: string;
   onSuccess: (project: Project) => void;
 }
 
-export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectFormProps) {
+export function ProjectForm({ open, onOpenChange, project, defaultClientId, onSuccess }: ProjectFormProps) {
   const isEdit = !!project;
   const [loading, setLoading] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [form, setForm] = useState({
-    clientId: project?.clientId ?? "",
+    clientId: project?.clientId ?? defaultClientId ?? "",
     name: project?.name ?? "",
     isActive: project?.isActive ?? true,
   });
 
   useEffect(() => {
-    fetch("/api/clients").then((r) => r.json()).then(setClients);
-  }, []);
+    if (!defaultClientId) fetch("/api/clients").then((r) => r.json()).then(setClients);
+  }, [defaultClientId]);
+
+  useEffect(() => {
+    if (open) setForm({ clientId: project?.clientId ?? defaultClientId ?? "", name: project?.name ?? "", isActive: project?.isActive ?? true });
+  }, [open]); // eslint-disable-line
 
   function reset() {
-    setForm({ clientId: project?.clientId ?? "", name: project?.name ?? "", isActive: project?.isActive ?? true });
+    setForm({ clientId: project?.clientId ?? defaultClientId ?? "", name: project?.name ?? "", isActive: project?.isActive ?? true });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -70,31 +68,27 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
     }
   }
 
-  const activeClients = clients.filter((c) => c.isActive);
+  const activeClients = clients
+    .filter((c) => c.isActive)
+    .map((c) => ({ id: c.id, name: c.name }));
 
   return (
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) reset(); }}>
       <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Project" : "Add Project"}</DialogTitle>
+        <DialogHeader className="gap-0.5">
+          <DialogTitle className="text-xl">{isEdit ? "Edit Project" : "Add Project"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label>Client</Label>
-            <Select
-              value={form.clientId}
-              onValueChange={(v) => setForm({ ...form, clientId: v ?? "" })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a client…" />
-              </SelectTrigger>
-              <SelectContent>
-                {activeClients.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-4 pt-3">
+          {!defaultClientId && (
+            <div className="space-y-2">
+              <Label>Client</Label>
+              <ListPicker
+                items={activeClients}
+                value={form.clientId}
+                onChange={(id) => setForm({ ...form, clientId: id })}
+              />
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="name">Project Name</Label>
             <Input
@@ -113,12 +107,12 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
             />
             <Label htmlFor="isActive">Active</Label>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>Cancel</Button>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={loading}>Cancel</Button>
             <Button type="submit" disabled={loading || !form.clientId}>
               {loading ? "Saving…" : isEdit ? "Save Changes" : "Create Project"}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

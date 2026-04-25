@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { generateSlug } from "@/lib/slug";
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
@@ -8,9 +9,17 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const clientId = searchParams.get("clientId");
+  const clientSlug = searchParams.get("clientSlug");
+  const projectSlug = searchParams.get("slug");
+
+  const where = clientId
+    ? { clientId }
+    : clientSlug
+      ? { slug: projectSlug ?? undefined, client: { slug: clientSlug } }
+      : undefined;
 
   const projects = await prisma.project.findMany({
-    where: clientId ? { clientId } : undefined,
+    where,
     include: { client: true },
     orderBy: [{ client: { name: "asc" } }, { name: "asc" }],
   });
@@ -34,8 +43,9 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "Project name already exists for this client" }, { status: 409 });
   }
 
+  const slug = generateSlug(name);
   const project = await prisma.project.create({
-    data: { clientId, name, isActive: isActive ?? true },
+    data: { clientId, name, slug, isActive: isActive ?? true },
     include: { client: true },
   });
   return Response.json(project, { status: 201 });

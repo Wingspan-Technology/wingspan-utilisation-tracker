@@ -45,7 +45,7 @@ async function getRecentEntries() {
     include: {
       user: { select: { name: true } },
       task: {
-        select: { name: true, color: true, isBillable: true, project: { select: { name: true, client: { select: { name: true } } } } },
+        select: { name: true, isBillable: true, project: { select: { name: true, client: { select: { name: true } } } } },
       },
     },
   });
@@ -114,10 +114,6 @@ export default async function AdminDashboardPage() {
               {recentEntries.map((entry) => (
                 <div key={entry.id} className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-3">
-                    <span
-                      className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: entry.task.color }}
-                    />
                     <span className="font-medium text-foreground/80">{entry.user.name}</span>
                     <span className="text-muted-foreground">
                       {entry.hours}h on{" "}

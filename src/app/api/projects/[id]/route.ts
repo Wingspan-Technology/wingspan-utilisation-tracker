@@ -1,6 +1,23 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { generateSlug } from "@/lib/slug";
+
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getSession();
+  if (!session) return Response.json({ error: "Unauthorised" }, { status: 401 });
+
+  const { id } = await params;
+  const project = await prisma.project.findUnique({
+    where: { id },
+    include: { client: true },
+  });
+  if (!project) return Response.json({ error: "Not found" }, { status: 404 });
+  return Response.json(project);
+}
 
 export async function PUT(
   req: NextRequest,
@@ -30,7 +47,12 @@ export async function PUT(
 
   const updated = await prisma.project.update({
     where: { id },
-    data: { clientId: newClientId, name: newName, isActive: isActive ?? project.isActive },
+    data: {
+      clientId: newClientId,
+      name: newName,
+      slug: newName !== project.name ? generateSlug(newName) : project.slug,
+      isActive: isActive ?? project.isActive,
+    },
     include: { client: true },
   });
   return Response.json(updated);

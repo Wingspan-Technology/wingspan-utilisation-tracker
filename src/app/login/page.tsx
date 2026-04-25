@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -32,11 +30,7 @@ export default function LoginPage() {
         return;
       }
 
-      if (data.role === "ADMIN") {
-        router.push("/admin");
-      } else {
-        router.push("/dashboard");
-      }
+      window.location.href = data.role === "ADMIN" ? "/admin" : "/dashboard";
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
@@ -80,9 +74,11 @@ export default function LoginPage() {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <div className="pt-6">
+              <Button type="submit" className="w-full bg-emerald-700 hover:bg-emerald-600 text-white" disabled={loading}>
                 {loading ? "Signing in…" : "Sign in"}
               </Button>
+              </div>
             </form>
           </CardContent>
         </Card>

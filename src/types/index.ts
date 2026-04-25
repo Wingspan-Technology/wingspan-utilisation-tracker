@@ -11,14 +11,17 @@ export interface User {
 
 export interface Client {
   id: string;
+  slug: string;
   name: string;
   isActive: boolean;
   createdAt: string;
+  _count?: { projects: number };
 }
 
 export interface Project {
   id: string;
   clientId: string;
+  slug: string;
   name: string;
   isActive: boolean;
   createdAt: string;
@@ -29,10 +32,8 @@ export interface Task {
   id: string;
   projectId: string;
   name: string;
-  description: string | null;
   isActive: boolean;
   isBillable: boolean;
-  color: string;
   createdAt: string;
   project: Project;
 }

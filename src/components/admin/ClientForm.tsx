@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +28,10 @@ export function ClientForm({ open, onOpenChange, client, onSuccess }: ClientForm
     name: client?.name ?? "",
     isActive: client?.isActive ?? true,
   });
+
+  useEffect(() => {
+    if (open) setForm({ name: client?.name ?? "", isActive: client?.isActive ?? true });
+  }, [open]); // eslint-disable-line
 
   function reset() {
     setForm({ name: client?.name ?? "", isActive: client?.isActive ?? true });
@@ -60,10 +63,10 @@ export function ClientForm({ open, onOpenChange, client, onSuccess }: ClientForm
   return (
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) reset(); }}>
       <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Client" : "Add Client"}</DialogTitle>
+        <DialogHeader className="gap-0.5">
+          <DialogTitle className="text-xl">{isEdit ? "Edit Client" : "Add Client"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 pt-3">
           <div className="space-y-2">
             <Label htmlFor="name">Client Name</Label>
             <Input
@@ -82,14 +85,14 @@ export function ClientForm({ open, onOpenChange, client, onSuccess }: ClientForm
             />
             <Label htmlFor="isActive">Active</Label>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={loading}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
               {loading ? "Saving…" : isEdit ? "Save Changes" : "Create Client"}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

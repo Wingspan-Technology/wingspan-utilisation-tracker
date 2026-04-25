@@ -11,7 +11,7 @@ export async function PUT(
   if (session.role !== "ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await params;
-  const { projectId, name, description, color, isActive, isBillable } = await req.json();
+  const { projectId, name, isActive, isBillable } = await req.json();
 
   const task = await prisma.task.findUnique({ where: { id } });
   if (!task) return Response.json({ error: "Not found" }, { status: 404 });
@@ -33,8 +33,6 @@ export async function PUT(
     data: {
       projectId: newProjectId,
       name: newName,
-      description: description !== undefined ? description || null : task.description,
-      color: color ?? task.color,
       isActive: isActive ?? task.isActive,
       isBillable: isBillable ?? task.isBillable,
     },

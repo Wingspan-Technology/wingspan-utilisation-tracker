@@ -1,26 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { User } from "@/types";
+import { ListPicker } from "@/components/ui/list-picker";
+import type { Role, User } from "@/types";
+
+const ROLE_ITEMS = [
+  { id: "USER", name: "Developer" },
+  { id: "ADMIN", name: "Admin" },
+];
 
 interface UserFormProps {
   open: boolean;
@@ -39,6 +37,16 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
     role: user?.role ?? "USER",
     isActive: user?.isActive ?? true,
   });
+
+  useEffect(() => {
+    if (open) setForm({
+      name: user?.name ?? "",
+      email: user?.email ?? "",
+      password: "",
+      role: user?.role ?? "USER",
+      isActive: user?.isActive ?? true,
+    });
+  }, [open]); // eslint-disable-line
 
   function reset() {
     setForm({
@@ -94,10 +102,10 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
   return (
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) reset(); }}>
       <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit User" : "Add User"}</DialogTitle>
+        <DialogHeader className="gap-0.5">
+          <DialogTitle className="text-xl">{isEdit ? "Edit User" : "Add User"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 pt-3">
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
             <Input
@@ -132,18 +140,11 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
           </div>
           <div className="space-y-2">
             <Label>Role</Label>
-            <Select
+            <ListPicker
+              items={ROLE_ITEMS}
               value={form.role}
-              onValueChange={(v) => setForm({ ...form, role: v as "ADMIN" | "USER" })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="USER">Developer</SelectItem>
-                <SelectItem value="ADMIN">Admin</SelectItem>
-              </SelectContent>
-            </Select>
+              onChange={(id) => setForm({ ...form, role: id as Role })}
+            />
           </div>
           <div className="flex items-center gap-3">
             <Switch
@@ -153,14 +154,14 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
             />
             <Label htmlFor="isActive">Active</Label>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={loading}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
               {loading ? "Saving…" : isEdit ? "Save Changes" : "Create User"}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

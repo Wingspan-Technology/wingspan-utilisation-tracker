@@ -3,11 +3,7 @@ import { getSession } from "@/lib/auth";
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import { UserNav } from "@/components/layout/UserNav";
 
-export default async function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function ReportsLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
   if (!session || session.role !== "ADMIN") redirect("/login");
 
