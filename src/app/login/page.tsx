@@ -30,7 +30,7 @@ export default function LoginPage() {
         return;
       }
 
-      window.location.href = data.role === "ADMIN" ? "/admin" : "/dashboard";
+      window.location.href = data.role === "ADMIN" ? "/reports/dynamic-utilisation" : "/dashboard";
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
@@ -75,7 +75,7 @@ export default function LoginPage() {
                 />
               </div>
               <div className="pt-6">
-              <Button type="submit" className="w-full bg-emerald-700 hover:bg-emerald-600 text-white" disabled={loading}>
+              <Button type="submit" className="w-full h-12 bg-emerald-700 hover:bg-emerald-600 text-white" disabled={loading}>
                 {loading ? "Signing in…" : "Sign in"}
               </Button>
               </div>

@@ -5,14 +5,13 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/admin", label: "Dashboard", exact: true },
   { href: "/admin/clients", label: "Clients" },
   { href: "/admin/users", label: "Users" },
+  { href: "/admin/audit-log", label: "Audit Log" },
 ];
 
 const reportItems = [
-  { href: "/reports/developer-summary", label: "Developer Summary" },
-  { href: "/reports/client-summary", label: "Client Summary" },
+  { href: "/reports/dynamic-utilisation", label: "Dynamic Utilisation" },
 ];
 
 export function AdminSidebar() {

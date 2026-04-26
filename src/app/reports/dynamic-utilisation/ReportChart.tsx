@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Banknote, ChevronDown, Leaf } from "lucide-react";
+import { Banknote, ChevronDown, ChevronRight, Leaf } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const BILLABLE = "#378ADD";
@@ -78,11 +78,18 @@ function FilterSelect({ value, options, placeholder, disabled, onChange }: Filte
   );
 }
 
+export type TaskRow = {
+  taskName: string;
+  isBillable: boolean;
+  days: number;
+};
+
 export type ProjectRow = {
   clientName: string;
   projectName: string;
   billableDays: number;
   nonBillableDays: number;
+  tasks: TaskRow[];
 };
 
 type ClientGroup = {
@@ -95,8 +102,10 @@ type ClientGroup = {
 type Props = {
   rows: ProjectRow[];
   developers: { id: string; name: string }[];
+  clients: { id: string; name: string }[];
   months: string[];
   selectedDeveloper: string | null;
+  selectedClient: string | null;
   selectedMonth: string | null;
   selectedYear: string | null;
 };
@@ -105,40 +114,56 @@ function fmt(n: number): string {
   return n.toFixed(1) + "d";
 }
 
-export function ReportChart({ rows, developers, months, selectedDeveloper, selectedMonth, selectedYear }: Props) {
+export function ReportChart({ rows, developers, clients, months, selectedDeveloper, selectedClient, selectedMonth, selectedYear }: Props) {
   const router = useRouter();
+  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
 
   const years = [...new Set(months.map((m) => m.split("-")[0]))].sort();
   const currentYear = selectedMonth ? selectedMonth.split("-")[0] : selectedYear;
   const yearMonths = currentYear ? months.filter((m) => m.startsWith(currentYear + "-")) : [];
   const currentMonth = selectedMonth ? selectedMonth.split("-")[1] : null;
 
-  function buildUrl(params: { developer?: string; year?: string; month?: string }) {
+  function buildUrl(params: { developer?: string; client?: string; year?: string; month?: string }) {
     const p = new URLSearchParams();
     if (params.developer) p.set("developer", params.developer);
+    if (params.client) p.set("client", params.client);
     if (params.year) p.set("year", params.year);
     if (params.month) p.set("month", params.month);
     const qs = p.toString();
-    return `/reports/developer-summary${qs ? `?${qs}` : ""}`;
+    return `/reports/dynamic-utilisation${qs ? `?${qs}` : ""}`;
   }
 
   function handleDeveloperChange(id: string) {
-    router.push(buildUrl({ developer: id || undefined }));
+    router.push(buildUrl({ developer: id || undefined, client: selectedClient || undefined }));
+  }
+
+  function handleClientChange(id: string) {
+    router.push(buildUrl({ developer: selectedDeveloper || undefined, client: id || undefined }));
   }
 
   function handleYearChange(year: string) {
-    router.push(buildUrl({ developer: selectedDeveloper || undefined, year: year || undefined }));
+    router.push(buildUrl({ developer: selectedDeveloper || undefined, client: selectedClient || undefined, year: year || undefined }));
   }
 
   function handleMonthChange(month: string) {
     if (month) {
-      router.push(buildUrl({ developer: selectedDeveloper || undefined, month: `${currentYear}-${month}` }));
+      router.push(buildUrl({ developer: selectedDeveloper || undefined, client: selectedClient || undefined, month: `${currentYear}-${month}` }));
     } else {
-      router.push(buildUrl({ developer: selectedDeveloper || undefined, year: currentYear || undefined }));
+      router.push(buildUrl({ developer: selectedDeveloper || undefined, client: selectedClient || undefined, year: currentYear || undefined }));
     }
   }
 
+  function toggleProject(key: string) {
+    setExpandedProjects((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
   const developerOptions = developers.map((d) => ({ value: d.id, label: d.name }));
+  const clientOptions = clients.map((c) => ({ value: c.id, label: c.name }));
   const yearOptions = years.map((y) => ({ value: y, label: y }));
   const monthOptions = yearMonths.map((m) => {
     const mm = m.split("-")[1];
@@ -159,21 +184,27 @@ export function ReportChart({ rows, developers, months, selectedDeveloper, selec
     clientMap.set(row.clientName, g);
   }
 
-  const clients = [...clientMap.values()].sort(
+  const clientGroups = [...clientMap.values()].sort(
     (a, b) => b.billableDays + b.nonBillableDays - (a.billableDays + a.nonBillableDays)
   );
-  for (const c of clients) {
+  for (const c of clientGroups) {
     c.projects.sort((a, b) => b.billableDays + b.nonBillableDays - (a.billableDays + a.nonBillableDays));
+    for (const p of c.projects) {
+      p.tasks.sort((a, b) => b.days - a.days);
+    }
   }
 
   const maxProjectDays = Math.max(...rows.map((r) => r.billableDays + r.nonBillableDays), 0.001);
+  const allTasks = rows.flatMap((r) => r.tasks);
+  const maxTaskDays = Math.max(...allTasks.map((t) => t.days), 0.001);
+
   const totalBillable = rows.reduce((s, r) => s + r.billableDays, 0);
   const totalNonBillable = rows.reduce((s, r) => s + r.nonBillableDays, 0);
   const totalDays = totalBillable + totalNonBillable;
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">Developer Summary Report</h1>
+      <h1 className="text-2xl font-bold text-foreground">Dynamic Utilisation Report</h1>
 
       {/* Filters */}
       <div className="flex items-center gap-3">
@@ -182,6 +213,12 @@ export function ReportChart({ rows, developers, months, selectedDeveloper, selec
           options={developerOptions}
           placeholder="All developers"
           onChange={handleDeveloperChange}
+        />
+        <FilterSelect
+          value={selectedClient ?? ""}
+          options={clientOptions}
+          placeholder="All clients"
+          onChange={handleClientChange}
         />
         <FilterSelect
           value={currentYear ?? ""}
@@ -225,7 +262,7 @@ export function ReportChart({ rows, developers, months, selectedDeveloper, selec
         <p className="text-center text-muted-foreground py-12">No time entries for this period.</p>
       ) : (
         <div className="space-y-4">
-          {clients.map((client) => {
+          {clientGroups.map((client) => {
             const clientTotal = client.billableDays + client.nonBillableDays;
             return (
               <div key={client.name} className="bg-card rounded-lg border border-border overflow-hidden">
@@ -244,31 +281,75 @@ export function ReportChart({ rows, developers, months, selectedDeveloper, selec
 
                 <div className="divide-y divide-border">
                   {client.projects.map((proj) => {
+                    const projKey = `${client.name}::${proj.projectName}`;
+                    const expanded = expandedProjects.has(projKey);
                     const projTotal = proj.billableDays + proj.nonBillableDays;
                     const barWidthPct = (projTotal / maxProjectDays) * 100;
                     const billableFrac = projTotal > 0 ? proj.billableDays / projTotal : 0;
                     const nonBillableFrac = projTotal > 0 ? proj.nonBillableDays / projTotal : 0;
                     return (
-                      <div key={proj.projectName} className="px-4 py-2 space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">{proj.projectName}</span>
-                          <div className="flex items-center gap-5 text-xs">
-                            <span className="flex items-center gap-1 tabular-nums" style={{ color: BILLABLE }}>
-                              <Banknote className="h-3 w-3 shrink-0" /> {fmt(proj.billableDays)}
+                      <div key={proj.projectName}>
+                        <div
+                          className="px-4 py-2 space-y-1.5 cursor-pointer hover:bg-muted/10"
+                          onClick={() => toggleProject(projKey)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              {expanded
+                                ? <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+                                : <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
+                              {proj.projectName}
                             </span>
-                            <span className="flex items-center gap-1 tabular-nums" style={{ color: NON_BILLABLE }}>
-                              <Leaf className="h-3 w-3 shrink-0" /> {fmt(proj.nonBillableDays)}
-                            </span>
-                            <span className="text-muted-foreground tabular-nums">{fmt(projTotal)}</span>
+                            <div className="flex items-center gap-5 text-xs">
+                              <span className="flex items-center gap-1 tabular-nums" style={{ color: BILLABLE }}>
+                                <Banknote className="h-3 w-3 shrink-0" /> {fmt(proj.billableDays)}
+                              </span>
+                              <span className="flex items-center gap-1 tabular-nums" style={{ color: NON_BILLABLE }}>
+                                <Leaf className="h-3 w-3 shrink-0" /> {fmt(proj.nonBillableDays)}
+                              </span>
+                              <span className="text-muted-foreground tabular-nums">{fmt(projTotal)}</span>
+                            </div>
+                          </div>
+                          <div
+                            className="flex h-3 rounded-sm overflow-hidden"
+                            style={{ width: `${barWidthPct}%`, minWidth: projTotal > 0 ? 2 : 0 }}
+                          >
+                            <div style={{ width: `${billableFrac * 100}%`, backgroundColor: BILLABLE }} />
+                            <div style={{ width: `${nonBillableFrac * 100}%`, backgroundColor: NON_BILLABLE }} />
                           </div>
                         </div>
-                        <div
-                          className="flex h-3 rounded-sm overflow-hidden"
-                          style={{ width: `${barWidthPct}%`, minWidth: projTotal > 0 ? 2 : 0 }}
-                        >
-                          <div style={{ width: `${billableFrac * 100}%`, backgroundColor: BILLABLE }} />
-                          <div style={{ width: `${nonBillableFrac * 100}%`, backgroundColor: NON_BILLABLE }} />
-                        </div>
+
+                        {expanded && (
+                          <div className="divide-y divide-border/50 border-t border-border/50">
+                            {proj.tasks.map((task) => {
+                              const taskBarWidthPct = (task.days / maxTaskDays) * 100;
+                              return (
+                                <div key={task.taskName} className="px-8 py-2 space-y-1.5">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs text-muted-foreground">{task.taskName}</span>
+                                    <span
+                                      className="flex items-center gap-1 text-xs tabular-nums"
+                                      style={{ color: task.isBillable ? BILLABLE : NON_BILLABLE }}
+                                    >
+                                      {task.isBillable
+                                        ? <Banknote className="h-3 w-3 shrink-0" />
+                                        : <Leaf className="h-3 w-3 shrink-0" />}
+                                      {fmt(task.days)}
+                                    </span>
+                                  </div>
+                                  <div
+                                    className="h-2 rounded-sm"
+                                    style={{
+                                      width: `${taskBarWidthPct}%`,
+                                      minWidth: task.days > 0 ? 2 : 0,
+                                      backgroundColor: task.isBillable ? BILLABLE : NON_BILLABLE,
+                                    }}
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     );
                   })}

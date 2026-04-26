@@ -12,7 +12,7 @@ import {
   isToday,
   isSameMonth,
 } from "date-fns";
-import { Banknote, Leaf, Pencil, PlusCircle, Trash2 } from "lucide-react";
+import { Banknote, ChevronLeft, ChevronRight, Leaf, Pencil, PlusCircle, Trash2 } from "lucide-react";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -166,11 +166,11 @@ export default function DashboardPage() {
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Month navigation */}
       <div className="flex items-center gap-3">
-        <Button variant="outline" size="sm" onClick={goToPrevMonth}>←</Button>
+        <Button variant="outline" size="icon-sm" onClick={goToPrevMonth}><ChevronLeft /></Button>
         <h1 className="text-2xl font-bold text-foreground w-48 text-center">
           {format(currentMonth, "MMMM yyyy")}
         </h1>
-        <Button variant="outline" size="sm" onClick={goToNextMonth}>→</Button>
+        <Button variant="outline" size="icon-sm" onClick={goToNextMonth}><ChevronRight /></Button>
         {!isCurrentMonth && (
           <Button variant="ghost" size="sm" onClick={goToThisMonth} className="text-muted-foreground">
             Today
