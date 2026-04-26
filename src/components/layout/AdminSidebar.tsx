@@ -35,7 +35,7 @@ export function AdminSidebar() {
       </div>
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map((item) => (
-          <Link key={item.href} href={item.href} className={linkClass(item.href, item.exact)}>
+          <Link key={item.href} href={item.href} className={linkClass(item.href)}>
             {item.label}
           </Link>
         ))}
