@@ -12,7 +12,7 @@ export async function PUT(
     return Response.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await params;
-  const { email, password, name, role, isActive } = await req.json();
+  const { email, name, role, isActive } = await req.json();
 
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) return Response.json({ error: "Not found" }, { status: 404 });
@@ -30,7 +30,6 @@ export async function PUT(
     where: { id },
     data: {
       email: email ? email.toLowerCase() : user.email,
-      password: password || user.password,
       name: name ?? user.name,
       role: role === "ADMIN" ? "ADMIN" : role === "USER" ? "USER" : user.role,
       isActive: isActive ?? user.isActive,

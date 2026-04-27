@@ -1,60 +1,67 @@
-import { SignJWT, jwtVerify } from "jose";
-import { cookies } from "next/headers";
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { headers } from "next/headers";
+import { prisma } from "./prisma";
 
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? "fallback-secret"
-);
+export const auth = betterAuth({
+  baseURL: process.env.BETTER_AUTH_URL,
+  secret: process.env.BETTER_AUTH_SECRET,
+  database: prismaAdapter(prisma, { provider: "postgresql" }),
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    },
+  },
+  user: {
+    additionalFields: {
+      role: { type: "string", required: false, defaultValue: "USER", input: false },
+      isActive: { type: "boolean", required: false, defaultValue: true, input: false },
+    },
+  },
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google"],
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        // Block OAuth sign-up for unknown emails — only pre-added users can sign in.
+        before: async (_user) => {
+          throw new Error("Access denied. Ask an admin to add your account.");
+        },
+      },
+    },
+    session: {
+      create: {
+        before: async (session) => {
+          const user = await prisma.user.findUnique({
+            where: { id: session.userId },
+            select: { isActive: true },
+          });
+          if (!user?.isActive) {
+            throw new Error("Your account has been deactivated. Contact an admin.");
+          }
+          return { data: session };
+        },
+      },
+    },
+  },
+});
 
-export const COOKIE_NAME = "wingspan_session";
+export type Session = typeof auth.$Infer.Session;
+export type AuthUser = Session["user"] & { role: string; isActive: boolean };
 
-export const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax" as const,
-  path: "/",
-  maxAge: 60 * 60 * 24 * 7,
-};
-
-export interface SessionPayload {
-  sub: string;
-  role: string;
-  name: string;
-  email: string;
-}
-
-export async function signToken(payload: SessionPayload): Promise<string> {
-  return new SignJWT(payload as unknown as Record<string, unknown>)
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime("7d")
-    .sign(SECRET);
-}
-
-export async function verifyToken(
-  token: string
-): Promise<SessionPayload | null> {
-  try {
-    const { payload } = await jwtVerify(token, SECRET);
-    return payload as unknown as SessionPayload;
-  } catch {
-    return null;
-  }
-}
-
-export async function getSession(): Promise<SessionPayload | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  if (!token) return null;
-  return verifyToken(token);
-}
-
-export async function setSessionCookie(payload: SessionPayload): Promise<void> {
-  const token = await signToken(payload);
-  const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAME, token, COOKIE_OPTIONS);
-}
-
-export async function clearSessionCookie(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.delete(COOKIE_NAME);
+export async function getSession() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) return null;
+  const user = session.user as AuthUser;
+  return {
+    sub: user.id,
+    role: user.role ?? "USER",
+    name: user.name,
+    email: user.email,
+  };
 }

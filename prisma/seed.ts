@@ -16,36 +16,36 @@ async function main() {
   console.log("Seeding database…");
 
   const admin = await prisma.user.upsert({
-    where: { email: "admin@wingspan.com" },
+    where: { email: "bill@wingspantechnology.com" },
     update: {},
     create: {
-      email: "admin@wingspan.com",
-      password: "admin123",
-      name: "Admin User",
+      email: "bill@wingspantechnology.com",
+      name: "Bill",
+      emailVerified: true,
       role: "ADMIN",
       isActive: true,
     },
   });
 
   const dev1 = await prisma.user.upsert({
-    where: { email: "alice@wingspan.com" },
+    where: { email: "alice@wingspantechnology.com" },
     update: {},
     create: {
-      email: "alice@wingspan.com",
-      password: "alice123",
+      email: "alice@wingspantechnology.com",
       name: "Alice Smith",
+      emailVerified: false,
       role: "USER",
       isActive: true,
     },
   });
 
   const dev2 = await prisma.user.upsert({
-    where: { email: "bob@wingspan.com" },
+    where: { email: "bob@wingspantechnology.com" },
     update: {},
     create: {
-      email: "bob@wingspan.com",
-      password: "bob123",
+      email: "bob@wingspantechnology.com",
       name: "Bob Jones",
+      emailVerified: false,
       role: "USER",
       isActive: true,
     },
@@ -147,10 +147,11 @@ async function main() {
     });
   }
 
-  console.log(`✓ admin@wingspan.com / admin123`);
-  console.log(`✓ alice@wingspan.com / alice123`);
-  console.log(`✓ bob@wingspan.com / bob123`);
+  console.log(`✓ ${admin.email} (ADMIN)`);
+  console.log(`✓ ${dev1.email} (USER)`);
+  console.log(`✓ ${dev2.email} (USER)`);
   console.log(`✓ 3 clients, 4 projects, ${tasks.length} tasks, ${entries.length} time entries`);
+  console.log("Users sign in with Google — no passwords.");
 }
 
 main()

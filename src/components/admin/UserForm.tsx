@@ -33,7 +33,6 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
   const [form, setForm] = useState({
     name: user?.name ?? "",
     email: user?.email ?? "",
-    password: "",
     role: user?.role ?? "USER",
     isActive: user?.isActive ?? true,
   });
@@ -42,7 +41,6 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
     if (open) setForm({
       name: user?.name ?? "",
       email: user?.email ?? "",
-      password: "",
       role: user?.role ?? "USER",
       isActive: user?.isActive ?? true,
     });
@@ -52,7 +50,6 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
     setForm({
       name: user?.name ?? "",
       email: user?.email ?? "",
-      password: "",
       role: user?.role ?? "USER",
       isActive: user?.isActive ?? true,
     });
@@ -60,20 +57,14 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!isEdit && !form.password) {
-      toast.error("Password is required for new users");
-      return;
-    }
-
     setLoading(true);
     try {
-      const body: Record<string, unknown> = {
+      const body = {
         name: form.name,
         email: form.email,
         role: form.role,
         isActive: form.isActive,
       };
-      if (form.password) body.password = form.password;
 
       const res = await fetch(
         isEdit ? `/api/users/${user!.id}` : "/api/users",
@@ -126,19 +117,6 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">
-              Password {isEdit && <span className="text-slate-400 font-normal">(leave blank to keep current)</span>}
-            </Label>
-            <Input
-              id="password"
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              required={!isEdit}
-              placeholder={isEdit ? "Leave blank to keep current" : ""}
-            />
-          </div>
-          <div className="space-y-2">
             <Label>Role</Label>
             <ListPicker
               items={ROLE_ITEMS}
@@ -154,12 +132,17 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
             />
             <Label htmlFor="isActive">Active</Label>
           </div>
+          {!isEdit && (
+            <p className="text-xs text-muted-foreground">
+              The user will sign in with their Google account using this email address.
+            </p>
+          )}
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={loading}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Saving…" : isEdit ? "Save Changes" : "Create User"}
+              {loading ? "Saving…" : isEdit ? "Save Changes" : "Add User"}
             </Button>
           </div>
         </form>

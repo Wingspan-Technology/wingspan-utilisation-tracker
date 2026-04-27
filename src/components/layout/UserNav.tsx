@@ -6,6 +6,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { authClient } from "@/lib/auth-client";
+
 interface UserNavProps {
   name: string;
   email: string;
@@ -13,8 +15,8 @@ interface UserNavProps {
 }
 
 export function UserNav({ name }: UserNavProps) {
-  async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+  async function handleSignOut() {
+    await authClient.signOut();
     window.location.href = "/login";
   }
 
@@ -24,7 +26,7 @@ export function UserNav({ name }: UserNavProps) {
         <span className="text-sm font-medium">{name}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-40">
-        <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer">
+        <DropdownMenuItem onClick={handleSignOut} className="text-red-600 cursor-pointer">
           Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>
