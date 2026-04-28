@@ -115,6 +115,7 @@ interface TimeEntryFormProps {
   entry?: TimeEntry | null;
   defaultDate?: string;
   onSuccess: (entry: TimeEntry) => void;
+  targetUserId?: string;
 }
 
 export function TimeEntryForm({
@@ -123,6 +124,7 @@ export function TimeEntryForm({
   entry,
   defaultDate,
   onSuccess,
+  targetUserId,
 }: TimeEntryFormProps) {
   const isEdit = !!entry;
   const [loading, setLoading] = useState(false);
@@ -237,7 +239,11 @@ export function TimeEntryForm({
         {
           method: isEdit ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...form, hours: parsedHours }),
+          body: JSON.stringify({
+            ...form,
+            hours: parsedHours,
+            ...(targetUserId && !isEdit ? { userId: targetUserId } : {}),
+          }),
         },
       );
       const data = await res.json();

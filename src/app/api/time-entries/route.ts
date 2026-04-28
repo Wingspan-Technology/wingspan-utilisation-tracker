@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return Response.json({ error: "Unauthorised" }, { status: 401 });
 
-  const { taskId, date, hours, description } = await req.json();
+  const { taskId, date, hours, description, userId: bodyUserId } = await req.json();
 
   if (!taskId || !date || hours == null) {
     return Response.json({ error: "Task, date and hours are required" }, { status: 400 });
@@ -62,6 +62,10 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "Hours must be between 0 and 24" }, { status: 400 });
   }
 
+  // Admins may post on behalf of another user by supplying userId in the body.
+  const targetUserId =
+    session.role === "ADMIN" && bodyUserId ? bodyUserId : session.sub;
+
   const task = await prisma.task.findUnique({ where: { id: taskId } });
   if (!task || !task.isActive) {
     return Response.json({ error: "Invalid or inactive task" }, { status: 400 });
@@ -69,7 +73,7 @@ export async function POST(req: NextRequest) {
 
   const entry = await prisma.timeEntry.create({
     data: {
-      userId: session.sub,
+      userId: targetUserId,
       taskId,
       date: new Date(date + "T00:00:00.000Z"),
       hours: parseFloat(hours),
