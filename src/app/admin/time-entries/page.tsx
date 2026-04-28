@@ -14,7 +14,6 @@ import {
 } from "date-fns";
 import {
   Banknote,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Leaf,
@@ -23,6 +22,8 @@ import {
   Trash2,
   User,
 } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import { ListPicker } from "@/components/ui/list-picker";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,45 +74,8 @@ function MiniPieChart({ billable, total }: { billable: number; total: number }) 
   );
 }
 
-function UserPicker({
-  users,
-  value,
-  onChange,
-}: {
-  users: UserType[];
-  value: string;
-  onChange: (id: string) => void;
-}) {
-  const selected = users.find((u) => u.id === value);
-
-  return (
-    <div className="relative inline-flex items-center">
-      <User className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={cn(
-          "h-10 appearance-none rounded-lg border border-input bg-background",
-          "pl-9 pr-10 text-sm font-medium text-foreground",
-          "focus:outline-none focus:border-ring transition-colors",
-          "min-w-52",
-          !selected && "text-muted-foreground",
-        )}
-      >
-        <option value="">Select a developer…</option>
-        {users.map((u) => (
-          <option key={u.id} value={u.id}>
-            {u.name}
-            {u.role === "ADMIN" ? " (Admin)" : ""}
-          </option>
-        ))}
-      </select>
-      <ChevronDown className="absolute right-3 h-4 w-4 text-muted-foreground pointer-events-none" />
-    </div>
-  );
-}
-
 export default function AdminTimeEntriesPage() {
+  const { data: session } = authClient.useSession();
   const [users, setUsers] = useState<UserType[]>([]);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
@@ -128,6 +92,13 @@ export default function AdminTimeEntriesPage() {
       .then((r) => r.ok && r.json())
       .then((d) => d && setUsers(d.filter((u: UserType) => u.isActive)));
   }, []);
+
+  // Default to the logged-in user once both the session and user list are ready.
+  useEffect(() => {
+    if (session?.user?.id && users.length > 0 && !selectedUserId) {
+      setSelectedUserId(session.user.id);
+    }
+  }, [session, users]); // eslint-disable-line
 
   async function loadEntries(userId: string, month: Date) {
     if (!userId) { setEntries([]); return; }
@@ -217,6 +188,10 @@ export default function AdminTimeEntriesPage() {
   const nonBillableHours = totalHours - billableHours;
   const isCurrentMonth = isSameMonth(currentMonth, new Date());
   const selectedUser = users.find((u) => u.id === selectedUserId);
+  const userItems = users.map((u) => ({
+    id: u.id,
+    name: u.role === "ADMIN" ? `${u.name} (Admin)` : u.name,
+  }));
 
   const selectedDayEntries = selectedDay ? (entriesByDate[selectedDay] ?? []) : [];
   const selectedDayTotal = selectedDayEntries.reduce((s, e) => s + e.hours, 0);
@@ -229,11 +204,21 @@ export default function AdminTimeEntriesPage() {
           <h1 className="text-2xl font-bold text-foreground">Time Entries</h1>
           <p className="text-sm text-muted-foreground mt-1">Log or edit time on behalf of a developer</p>
         </div>
-        <UserPicker users={users} value={selectedUserId} onChange={(id) => {
-          setSelectedUserId(id);
-          setSelectedDay(null);
-          setEntries([]);
-        }} />
+        <div className="flex items-center gap-2">
+          <User className="h-4 w-4 text-muted-foreground shrink-0" />
+          <div className="w-56">
+            <ListPicker
+              items={userItems}
+              value={selectedUserId}
+              placeholder="Select developer…"
+              onChange={(id) => {
+                setSelectedUserId(id);
+                setSelectedDay(null);
+                setEntries([]);
+              }}
+            />
+          </div>
+        </div>
       </div>
 
       {!selectedUserId ? (
