@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
   format,
@@ -76,9 +77,19 @@ function MiniPieChart({ billable, total }: { billable: number; total: number }) 
 
 export default function AdminTimeEntriesPage() {
   const { data: session } = authClient.useSession();
+  const searchParams = useSearchParams();
+  const paramUserId = searchParams.get("userId") ?? "";
+  const paramMonth = searchParams.get("month") ?? "";
+
   const [users, setUsers] = useState<UserType[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
+  const [selectedUserId, setSelectedUserId] = useState(paramUserId);
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    if (paramMonth && /^\d{4}-\d{2}$/.test(paramMonth)) {
+      const [year, month] = paramMonth.split("-").map(Number);
+      return startOfMonth(new Date(year, month - 1, 1));
+    }
+    return startOfMonth(new Date());
+  });
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [formOpen, setFormOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<TimeEntry | null>(null);

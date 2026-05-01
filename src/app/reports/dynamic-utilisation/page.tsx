@@ -7,12 +7,9 @@ export default async function DeveloperSummaryPage({
 }: {
   searchParams: { developer?: string; client?: string; year?: string; month?: string };
 }) {
-  const now = new Date();
-  const currentMonthDefault = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
-
   const selectedDeveloperId = searchParams.developer ?? null;
   const selectedClientId = searchParams.client ?? null;
-  const selectedMonth = searchParams.month ?? (searchParams.year ? null : currentMonthDefault);
+  const selectedMonth = searchParams.month ?? null;
   const selectedYear = searchParams.year ?? null;
 
   const [developers, clients] = await Promise.all([

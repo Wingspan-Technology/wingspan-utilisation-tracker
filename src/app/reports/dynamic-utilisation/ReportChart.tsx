@@ -134,11 +134,11 @@ export function ReportChart({ rows, developers, clients, months, selectedDevelop
   }
 
   function handleDeveloperChange(id: string) {
-    router.push(buildUrl({ developer: id || undefined, client: selectedClient || undefined }));
+    router.push(buildUrl({ developer: id || undefined, client: selectedClient || undefined, year: selectedYear || undefined, month: selectedMonth || undefined }));
   }
 
   function handleClientChange(id: string) {
-    router.push(buildUrl({ developer: selectedDeveloper || undefined, client: id || undefined }));
+    router.push(buildUrl({ developer: selectedDeveloper || undefined, client: id || undefined, year: selectedYear || undefined, month: selectedMonth || undefined }));
   }
 
   function handleYearChange(year: string) {

@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { AuditFilters } from "./AuditFilters";
+import { AuditLogRows } from "./AuditLogRows";
 import {
   Table,
-  TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
@@ -14,22 +13,26 @@ import { buttonVariants } from "@/components/ui/button";
 const PAGE_SIZE = 50;
 
 function fmtDateTime(d: Date): string {
-  return d.toLocaleString("en-AU", {
-    timeZone: "UTC",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
+  const time = d.toLocaleTimeString("en-GB", {
+    timeZone: "Europe/London",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
   });
+  const date = d.toLocaleDateString("en-GB", {
+    timeZone: "Europe/London",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+  return `${time} ${date}`;
 }
 
 function fmtDate(d: Date): string {
-  return d.toLocaleDateString("en-AU", {
+  return d.toLocaleDateString("en-GB", {
     timeZone: "UTC",
     day: "2-digit",
-    month: "short",
+    month: "2-digit",
     year: "numeric",
   });
 }
@@ -101,6 +104,19 @@ export default async function AuditLogPage({
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
+  const formattedEntries = entries.map((entry) => ({
+    id: entry.id,
+    userId: entry.userId,
+    createdAtFormatted: fmtDateTime(entry.createdAt),
+    dateFormatted: fmtDate(entry.date),
+    dateMonth: `${entry.date.getUTCFullYear()}-${String(entry.date.getUTCMonth() + 1).padStart(2, "0")}`,
+    hours: entry.hours,
+    userName: entry.user.name,
+    clientName: entry.task.project.client.name,
+    projectName: entry.task.project.name,
+    taskName: entry.task.name,
+  }));
+
   function pageUrl(p: number) {
     const params = new URLSearchParams();
     if (selectedDeveloperId) params.set("developer", selectedDeveloperId);
@@ -146,29 +162,7 @@ export default async function AuditLogPage({
               <TableHead className="text-right">Hours</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
-            {entries.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                  No time entries found.
-                </TableCell>
-              </TableRow>
-            ) : entries.map((entry) => (
-              <TableRow key={entry.id}>
-                <TableCell className="text-muted-foreground text-sm tabular-nums whitespace-nowrap">
-                  {fmtDateTime(entry.createdAt)}
-                </TableCell>
-                <TableCell className="font-medium">{entry.user.name}</TableCell>
-                <TableCell className="text-muted-foreground">{entry.task.project.client.name}</TableCell>
-                <TableCell className="text-muted-foreground">{entry.task.project.name}</TableCell>
-                <TableCell className="text-muted-foreground">{entry.task.name}</TableCell>
-                <TableCell className="text-muted-foreground tabular-nums whitespace-nowrap">
-                  {fmtDate(entry.date)}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">{entry.hours}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
+          <AuditLogRows entries={formattedEntries} />
         </Table>
       </div>
 
