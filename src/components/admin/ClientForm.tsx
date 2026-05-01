@@ -85,7 +85,7 @@ export function ClientForm({ open, onOpenChange, client, onSuccess }: ClientForm
             />
             <Label htmlFor="isActive">Active</Label>
           </div>
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex flex-col-reverse gap-2 pt-2 *:w-full sm:flex-row sm:justify-end sm:*:w-auto">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={loading}>
               Cancel
             </Button>

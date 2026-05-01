@@ -10,12 +10,13 @@ import {
   addMonths,
   subMonths,
   isToday,
-  isSameMonth,
 } from "date-fns";
-import { Banknote, ChevronLeft, ChevronRight, Leaf, Pencil, PlusCircle, Trash2 } from "lucide-react";
+import { Banknote, Leaf, Pencil, PlusCircle, Trash2 } from "lucide-react";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MonthNav } from "@/components/shared/MonthNav";
+import { HoursSummaryCards } from "@/components/shared/HoursSummaryCards";
+import { MiniPieChart } from "@/components/shared/MiniPieChart";
 import {
   Dialog,
   DialogContent,
@@ -28,40 +29,6 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { cn } from "@/lib/utils";
 import type { TimeEntry } from "@/types";
 
-function MiniPieChart({ billable, total }: { billable: number; total: number }) {
-  const r = 20;
-  const cx = 28;
-  const cy = 28;
-  const circumference = 2 * Math.PI * r;
-  const billableLen = total > 0 ? (billable / total) * circumference : 0;
-  const label = total % 1 === 0 ? `${total}h` : `${total.toFixed(1)}h`;
-
-  return (
-    <svg width="56" height="56" viewBox="0 0 56 56">
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#166534" strokeWidth="9" />
-      {billableLen > 0 && (
-        <circle
-          cx={cx} cy={cy} r={r}
-          fill="none"
-          stroke="#1d4ed8"
-          strokeWidth="9"
-          strokeDasharray={`${billableLen} ${circumference}`}
-          transform={`rotate(-90 ${cx} ${cy})`}
-        />
-      )}
-      <text
-        x={cx} y={cy}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fontSize="9"
-        fontWeight="700"
-        fill="white"
-      >
-        {label}
-      </text>
-    </svg>
-  );
-}
 
 export default function DashboardPage() {
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
@@ -157,7 +124,6 @@ export default function DashboardPage() {
   const totalHours = entries.reduce((s, e) => s + e.hours, 0);
   const billableHours = entries.filter((e) => e.task.isBillable).reduce((s, e) => s + e.hours, 0);
   const nonBillableHours = totalHours - billableHours;
-  const isCurrentMonth = isSameMonth(currentMonth, new Date());
 
   const selectedDayEntries = selectedDay ? (entriesByDate[selectedDay] ?? []) : [];
   const selectedDayTotal = selectedDayEntries.reduce((s, e) => s + e.hours, 0);
@@ -165,54 +131,10 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Month navigation */}
-      <div className="flex items-center gap-3">
-        <Button variant="outline" size="icon-sm" onClick={goToPrevMonth}><ChevronLeft /></Button>
-        <h1 className="text-2xl font-bold text-foreground w-48 text-center">
-          {format(currentMonth, "MMMM yyyy")}
-        </h1>
-        <Button variant="outline" size="icon-sm" onClick={goToNextMonth}><ChevronRight /></Button>
-        {!isCurrentMonth && (
-          <Button variant="ghost" size="sm" onClick={goToThisMonth} className="text-muted-foreground">
-            Today
-          </Button>
-        )}
-      </div>
+      <MonthNav currentMonth={currentMonth} onPrev={goToPrevMonth} onNext={goToNextMonth} onToday={goToThisMonth} />
 
       {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Hours</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{totalHours.toFixed(1)}h</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>
-              <span className="inline-flex items-center gap-1 rounded-full bg-blue-950/80 px-2 py-0.5 text-xs font-medium text-blue-300">
-                <Banknote className="h-3 w-3" /> Billable
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{billableHours.toFixed(1)}h</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>
-              <span className="inline-flex items-center gap-1 rounded-full bg-green-950/80 px-2 py-0.5 text-xs font-medium text-green-400">
-                <Leaf className="h-3 w-3" /> Non-billable
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{nonBillableHours.toFixed(1)}h</div>
-          </CardContent>
-        </Card>
-      </div>
+      <HoursSummaryCards totalHours={totalHours} billableHours={billableHours} nonBillableHours={nonBillableHours} />
 
       {/* Calendar grid */}
       <div className="bg-card rounded-lg border overflow-hidden">
@@ -364,7 +286,7 @@ export default function DashboardPage() {
                               <Pencil className="h-5 w-5" />
                             </Tooltip.Trigger>
                             <Tooltip.Portal>
-                              <Tooltip.Positioner className="z-[200]" sideOffset={8}>
+                              <Tooltip.Positioner className="z-200" sideOffset={8}>
                                 <Tooltip.Popup className="rounded-md bg-popover px-2 py-1 text-xs text-popover-foreground shadow-sm ring-1 ring-foreground/10">
                                   Edit entry
                                 </Tooltip.Popup>
@@ -380,7 +302,7 @@ export default function DashboardPage() {
                               <Trash2 className="h-5 w-5" />
                             </Tooltip.Trigger>
                             <Tooltip.Portal>
-                              <Tooltip.Positioner className="z-[200]" sideOffset={8}>
+                              <Tooltip.Positioner className="z-200" sideOffset={8}>
                                 <Tooltip.Popup className="rounded-md bg-popover px-2 py-1 text-xs text-popover-foreground shadow-sm ring-1 ring-foreground/10">
                                   Delete entry
                                 </Tooltip.Popup>
@@ -407,7 +329,7 @@ export default function DashboardPage() {
               </tfoot>
             </table>
 
-            <div className="flex justify-end gap-2 mt-8">
+            <div className="flex flex-col-reverse gap-2 mt-8 *:w-full sm:flex-row sm:justify-end sm:*:w-auto">
               <Button variant="ghost" onClick={() => setSelectedDay(null)}>
                 Close
               </Button>

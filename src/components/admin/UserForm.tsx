@@ -137,7 +137,7 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
               The user will sign in with their Google account using this email address.
             </p>
           )}
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex flex-col-reverse gap-2 pt-2 *:w-full sm:flex-row sm:justify-end sm:*:w-auto">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={loading}>
               Cancel
             </Button>

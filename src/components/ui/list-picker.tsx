@@ -6,7 +6,7 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const selectBase =
-  "h-8 w-full appearance-none rounded-lg border bg-background text-foreground pl-2.5 pr-2.5 py-1 text-sm outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-25 disabled:bg-muted/40";
+  "h-11 sm:h-8 w-full appearance-none rounded-lg border bg-background text-foreground pl-2.5 pr-2.5 py-1 text-sm outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-25 disabled:bg-muted/40";
 const selectNormal = "border-input focus:border-ring";
 const selectError = "border-destructive focus:border-destructive";
 

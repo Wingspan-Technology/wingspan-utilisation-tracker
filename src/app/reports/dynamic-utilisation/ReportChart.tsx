@@ -1,82 +1,15 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Banknote, ChevronDown, ChevronRight, Leaf } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { FilterSelect } from "@/components/ui/filter-select";
+import { Card, CardContent } from "@/components/ui/card";
 
 const BILLABLE = "#378ADD";
 const NON_BILLABLE = "#1D9E75";
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-const triggerClass =
-  "h-8 w-full flex items-center gap-2 text-left rounded-lg border border-input bg-background text-foreground pl-2.5 pr-2.5 py-1 text-sm outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-25 disabled:bg-muted/40";
-
-type FilterSelectProps = {
-  value: string;
-  options: { value: string; label: string }[];
-  placeholder: string;
-  disabled?: boolean;
-  onChange: (value: string) => void;
-};
-
-function FilterSelect({ value, options, placeholder, disabled, onChange }: FilterSelectProps) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
-  const selected = options.find((o) => o.value === value);
-
-  return (
-    <div ref={ref} className="relative w-44">
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => !disabled && setOpen((o) => !o)}
-        className={triggerClass}
-      >
-        <span className={cn("flex-1", !selected && "text-muted-foreground")}>
-          {selected ? selected.label : placeholder}
-        </span>
-        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-      </button>
-
-      {open && (
-        <ul className="absolute z-50 mt-1 w-full rounded-lg border border-input bg-background shadow-lg overflow-y-auto max-h-60">
-          <li
-            onMouseDown={(e) => { e.preventDefault(); onChange(""); setOpen(false); }}
-            className={cn(
-              "px-2.5 py-2 text-sm cursor-pointer hover:bg-muted/50 text-muted-foreground",
-              !value && "bg-muted/30"
-            )}
-          >
-            {placeholder}
-          </li>
-          {options.map((opt) => (
-            <li
-              key={opt.value}
-              onMouseDown={(e) => { e.preventDefault(); onChange(opt.value); setOpen(false); }}
-              className={cn(
-                "px-2.5 py-2 text-sm cursor-pointer hover:bg-muted/50",
-                value === opt.value && "bg-muted/30"
-              )}
-            >
-              {opt.label}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
 
 export type TaskRow = {
   taskName: string;
@@ -207,7 +140,7 @@ export function ReportChart({ rows, developers, clients, months, selectedDevelop
       <h1 className="text-2xl font-bold text-foreground">Dynamic Utilisation Report</h1>
 
       {/* Filters */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <FilterSelect
           value={selectedDeveloper ?? ""}
           options={developerOptions}
@@ -236,25 +169,29 @@ export function ReportChart({ rows, developers, clients, months, selectedDevelop
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-muted/40 rounded-lg border border-border p-4">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Total Days</p>
-          <p className="text-3xl font-bold mt-1 text-foreground">{fmt(totalDays)}</p>
-        </div>
-        <div className="bg-muted/40 rounded-lg border border-border p-4">
-          <div className="flex items-center gap-1.5">
-            <Banknote className="h-3.5 w-3.5 shrink-0" style={{ color: BILLABLE }} />
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Billable Days</p>
-          </div>
-          <p className="text-3xl font-bold mt-1" style={{ color: BILLABLE }}>{fmt(totalBillable)}</p>
-        </div>
-        <div className="bg-muted/40 rounded-lg border border-border p-4">
-          <div className="flex items-center gap-1.5">
-            <Leaf className="h-3.5 w-3.5 shrink-0" style={{ color: NON_BILLABLE }} />
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Non-billable Days</p>
-          </div>
-          <p className="text-3xl font-bold mt-1" style={{ color: NON_BILLABLE }}>{fmt(totalNonBillable)}</p>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="py-3 flex items-center justify-between">
+            <span className="text-sm font-medium text-muted-foreground">Total Days</span>
+            <span className="text-xl font-bold">{fmt(totalDays)}</span>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="py-3 flex items-center justify-between">
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: BILLABLE }}>
+              <Banknote className="h-3.5 w-3.5 shrink-0" /> Billable Days
+            </span>
+            <span className="text-xl font-bold" style={{ color: BILLABLE }}>{fmt(totalBillable)}</span>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="py-3 flex items-center justify-between">
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: NON_BILLABLE }}>
+              <Leaf className="h-3.5 w-3.5 shrink-0" /> Non-billable Days
+            </span>
+            <span className="text-xl font-bold" style={{ color: NON_BILLABLE }}>{fmt(totalNonBillable)}</span>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Client blocks */}

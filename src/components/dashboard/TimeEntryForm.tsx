@@ -378,7 +378,7 @@ export function TimeEntryForm({
                 Errors in form — please complete all required fields.
               </p>
             )}
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-col-reverse gap-2 *:w-full sm:flex-row sm:justify-end sm:*:w-auto">
               <Button
                 type="button"
                 variant="ghost"

@@ -33,7 +33,7 @@ export function ConfirmDialog({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-col-reverse gap-2 *:w-full sm:flex-row sm:justify-end sm:*:w-auto">
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={loading}>
             Cancel
           </Button>
