@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Menu } from "lucide-react";
 import { AdminSidebar } from "./AdminSidebar";
 import { UserNav } from "./UserNav";
+import { AppFooter } from "./AppFooter";
 
 interface AdminShellProps {
   name: string;
@@ -52,6 +53,7 @@ export function AdminShell({ name, email, role, children }: AdminShellProps) {
           <UserNav name={name} email={email} role={role} />
         </header>
         <main className="flex-1 p-6 bg-background">{children}</main>
+        <AppFooter />
       </div>
     </div>
   );

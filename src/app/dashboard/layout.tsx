@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { UserNav } from "@/components/layout/UserNav";
+import { AppFooter } from "@/components/layout/AppFooter";
 import Link from "next/link";
 import { LayoutDashboard } from "lucide-react";
 
@@ -31,6 +32,7 @@ export default async function DashboardLayout({
         </div>
       </header>
       <main className="flex-1 p-6 bg-background">{children}</main>
+      <AppFooter />
     </div>
   );
 }

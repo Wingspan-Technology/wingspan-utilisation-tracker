@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { ClientForm } from "@/components/admin/ClientForm";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Client } from "@/types";
 
 export default function ClientsPage() {
@@ -62,11 +63,11 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Clients</h1>
         </div>
-        <Button onClick={() => { setEditClient(null); setFormOpen(true); }}>Add Client</Button>
+        <Button className="w-full sm:w-auto" onClick={() => { setEditClient(null); setFormOpen(true); }}>Add Client</Button>
       </div>
 
       <div className="bg-card rounded-lg border">
@@ -79,7 +80,18 @@ export default function ClientsPage() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={2} className="text-center text-muted-foreground py-8">Loading…</TableCell></TableRow>
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-4 w-36" /></TableCell>
+                  <TableCell>
+                    <div className="flex gap-2 justify-end">
+                      <Skeleton className="h-5 w-5" />
+                      <Skeleton className="h-5 w-5" />
+                      <Skeleton className="h-5 w-5" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
             ) : clients.length === 0 ? (
               <TableRow><TableCell colSpan={2} className="text-center text-muted-foreground py-8">No clients yet.</TableCell></TableRow>
             ) : clients.map((client) => (

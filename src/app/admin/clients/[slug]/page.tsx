@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { ProjectForm } from "@/components/admin/ProjectForm";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Client, Project } from "@/types";
 
 export default function ClientDetailPage({ params }: { params: { slug: string } }) {
@@ -24,6 +25,7 @@ export default function ClientDetailPage({ params }: { params: { slug: string } 
   const { slug } = params;
   const [client, setClient] = useState<Client | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [deleteProject, setDeleteProject] = useState<Project | null>(null);
@@ -31,12 +33,13 @@ export default function ClientDetailPage({ params }: { params: { slug: string } 
 
   async function load() {
     const cr = await fetch(`/api/clients/${slug}`);
-    if (!cr.ok) return;
+    if (!cr.ok) { setLoading(false); return; }
     const clientData: Client = await cr.json();
     setClient(clientData);
 
     const pr = await fetch(`/api/projects?clientId=${clientData.id}`);
     if (pr.ok) setProjects(await pr.json());
+    setLoading(false);
   }
 
   useEffect(() => { load(); }, []); // eslint-disable-line
@@ -67,7 +70,7 @@ export default function ClientDetailPage({ params }: { params: { slug: string } 
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-foreground">
@@ -79,13 +82,13 @@ export default function ClientDetailPage({ params }: { params: { slug: string } 
           </div>
           <Link
             href="/admin/clients"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mt-1"
+            className="inline-flex items-center gap-1.5 text-base sm:text-sm text-muted-foreground hover:text-foreground transition-colors mt-1"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
+            <ArrowLeft className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
             Clients
           </Link>
         </div>
-        <Button onClick={() => { setEditProject(null); setFormOpen(true); }}>
+        <Button className="w-full sm:w-auto" onClick={() => { setEditProject(null); setFormOpen(true); }}>
           Add Project
         </Button>
       </div>
@@ -99,7 +102,20 @@ export default function ClientDetailPage({ params }: { params: { slug: string } 
             </TableRow>
           </TableHeader>
           <TableBody>
-            {projects.length === 0 ? (
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                  <TableCell>
+                    <div className="flex gap-2 justify-end">
+                      <Skeleton className="h-5 w-5" />
+                      <Skeleton className="h-5 w-5" />
+                      <Skeleton className="h-5 w-5" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : projects.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
                   No projects yet.

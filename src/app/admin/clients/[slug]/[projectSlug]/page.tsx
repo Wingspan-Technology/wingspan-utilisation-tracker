@@ -16,12 +16,14 @@ import {
 } from "@/components/ui/table";
 import { TaskForm } from "@/components/admin/TaskForm";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Project, Task } from "@/types";
 
 export default function ProjectDetailPage({ params }: { params: { slug: string; projectSlug: string } }) {
   const { slug, projectSlug } = params;
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [deleteTask, setDeleteTask] = useState<Task | null>(null);
@@ -29,14 +31,15 @@ export default function ProjectDetailPage({ params }: { params: { slug: string; 
 
   async function load() {
     const projects = await fetch(`/api/projects?clientSlug=${slug}&slug=${projectSlug}`);
-    if (!projects.ok) return;
+    if (!projects.ok) { setLoading(false); return; }
     const list = await projects.json();
-    if (!list.length) return;
+    if (!list.length) { setLoading(false); return; }
     const proj: Project = list[0];
     setProject(proj);
 
     const tr = await fetch(`/api/tasks?projectId=${proj.id}`);
     if (tr.ok) setTasks(await tr.json());
+    setLoading(false);
   }
 
   useEffect(() => { load(); }, []); // eslint-disable-line
@@ -67,7 +70,7 @@ export default function ProjectDetailPage({ params }: { params: { slug: string; 
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-foreground">
@@ -79,13 +82,13 @@ export default function ProjectDetailPage({ params }: { params: { slug: string; 
           </div>
           <Link
             href={`/admin/clients/${slug}`}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mt-1"
+            className="inline-flex items-center gap-1.5 text-base sm:text-sm text-muted-foreground hover:text-foreground transition-colors mt-1"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
+            <ArrowLeft className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
             {project?.client.name ?? "…"}
           </Link>
         </div>
-        <Button onClick={() => { setEditTask(null); setFormOpen(true); }}>
+        <Button className="w-full sm:w-auto" onClick={() => { setEditTask(null); setFormOpen(true); }}>
           Add Task
         </Button>
       </div>
@@ -100,7 +103,20 @@ export default function ProjectDetailPage({ params }: { params: { slug: string; 
             </TableRow>
           </TableHeader>
           <TableBody>
-            {tasks.length === 0 ? (
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-4 w-36" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
+                  <TableCell>
+                    <div className="flex gap-2 justify-end">
+                      <Skeleton className="h-5 w-5" />
+                      <Skeleton className="h-5 w-5" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : tasks.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
                   No tasks yet.

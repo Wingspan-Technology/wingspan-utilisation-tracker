@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { UserForm } from "@/components/admin/UserForm";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { User } from "@/types";
 
 export default function UsersPage() {
@@ -60,12 +61,12 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Users</h1>
           <p className="text-muted-foreground text-sm mt-1">Manage developer accounts</p>
         </div>
-        <Button onClick={() => { setEditUser(null); setFormOpen(true); }}>Add User</Button>
+        <Button className="w-full sm:w-auto" onClick={() => { setEditUser(null); setFormOpen(true); }}>Add User</Button>
       </div>
 
       <div className="bg-card rounded-lg border">
@@ -81,7 +82,20 @@ export default function UsersPage() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Loading…</TableCell></TableRow>
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-44" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-14 rounded-full" /></TableCell>
+                  <TableCell>
+                    <div className="flex gap-2 justify-end">
+                      <Skeleton className="h-5 w-5" />
+                      <Skeleton className="h-5 w-5" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
             ) : users.length === 0 ? (
               <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No users yet.</TableCell></TableRow>
             ) : users.map((user) => (
