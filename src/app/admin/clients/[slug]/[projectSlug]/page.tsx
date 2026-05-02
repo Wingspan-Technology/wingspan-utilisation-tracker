@@ -133,7 +133,7 @@ export default function ProjectDetailPage({ params }: { params: { slug: string; 
                           onClick={() => { setEditTask(task); setFormOpen(true); }}
                           className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
                         >
-                          <Pencil className="h-5 w-5" />
+                          <Pencil className="h-6 w-6 sm:h-5 sm:w-5" />
                         </Tooltip.Trigger>
                         <Tooltip.Portal>
                           <Tooltip.Positioner sideOffset={8}>
@@ -148,7 +148,7 @@ export default function ProjectDetailPage({ params }: { params: { slug: string; 
                           onClick={() => setDeleteTask(task)}
                           className="cursor-pointer text-muted-foreground hover:text-red-400 transition-colors"
                         >
-                          <Trash2 className="h-5 w-5" />
+                          <Trash2 className="h-6 w-6 sm:h-5 sm:w-5" />
                         </Tooltip.Trigger>
                         <Tooltip.Portal>
                           <Tooltip.Positioner sideOffset={8}>

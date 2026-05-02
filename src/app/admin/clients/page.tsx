@@ -100,7 +100,7 @@ export default function ClientsPage() {
                           onClick={() => router.push(`/admin/clients/${client.slug}`)}
                           className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
                         >
-                          <Eye className="h-5 w-5" />
+                          <Eye className="h-6 w-6 sm:h-5 sm:w-5" />
                         </Tooltip.Trigger>
                         <Tooltip.Portal>
                           <Tooltip.Positioner sideOffset={8}>
@@ -115,7 +115,7 @@ export default function ClientsPage() {
                           onClick={() => { setEditClient(client); setFormOpen(true); }}
                           className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
                         >
-                          <Pencil className="h-5 w-5" />
+                          <Pencil className="h-6 w-6 sm:h-5 sm:w-5" />
                         </Tooltip.Trigger>
                         <Tooltip.Portal>
                           <Tooltip.Positioner sideOffset={8}>
@@ -130,7 +130,7 @@ export default function ClientsPage() {
                           onClick={() => !client._count?.projects && setDeleteClient(client)}
                           className={client._count?.projects ? "cursor-not-allowed opacity-30" : "cursor-pointer text-muted-foreground hover:text-red-400 transition-colors"}
                         >
-                          <Trash2 className="h-5 w-5" />
+                          <Trash2 className="h-6 w-6 sm:h-5 sm:w-5" />
                         </Tooltip.Trigger>
                         <Tooltip.Portal>
                           <Tooltip.Positioner sideOffset={8}>

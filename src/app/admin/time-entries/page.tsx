@@ -357,7 +357,7 @@ export default function AdminTimeEntriesPage() {
                               onClick={() => { setSelectedDay(null); openEditEntry(entry); }}
                               className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
                             >
-                              <Pencil className="h-5 w-5" />
+                              <Pencil className="h-6 w-6 sm:h-5 sm:w-5" />
                             </Tooltip.Trigger>
                             <Tooltip.Portal>
                               <Tooltip.Positioner className="z-200" sideOffset={8}>
@@ -373,7 +373,7 @@ export default function AdminTimeEntriesPage() {
                               onClick={() => setDeleteEntry(entry)}
                               className="cursor-pointer text-muted-foreground hover:text-red-400 transition-colors"
                             >
-                              <Trash2 className="h-5 w-5" />
+                              <Trash2 className="h-6 w-6 sm:h-5 sm:w-5" />
                             </Tooltip.Trigger>
                             <Tooltip.Portal>
                               <Tooltip.Positioner className="z-200" sideOffset={8}>
