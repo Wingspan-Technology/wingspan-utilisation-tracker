@@ -16,7 +16,7 @@ export function AdminShell({ name, email, role, children }: AdminShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-dvh">
       {/* Desktop sidebar */}
       <div className="hidden md:block">
         <AdminSidebar />
@@ -42,7 +42,7 @@ export function AdminShell({ name, email, role, children }: AdminShellProps) {
             onClick={() => setMobileOpen(true)}
             aria-label="Open menu"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-6 w-6" />
           </button>
           <div className="md:hidden">
             <p className="text-sm font-bold text-white leading-none">Wingspan</p>

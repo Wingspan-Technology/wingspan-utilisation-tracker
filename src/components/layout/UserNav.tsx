@@ -24,7 +24,7 @@ export function UserNav({ name }: UserNavProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent transition-colors outline-none">
-        <User className="h-4 w-4 md:hidden" />
+        <User className="h-5 w-5 md:hidden" />
         <span className="hidden md:inline text-sm font-medium">{name}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-40">

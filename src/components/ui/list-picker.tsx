@@ -66,7 +66,7 @@ export function ListPicker({
         )}
       >
         <span className="flex-1 truncate">{selected ? selected.name : placeholder}</span>
-        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <ChevronDown className="h-5 w-5 sm:h-4 sm:w-4 shrink-0 text-muted-foreground" />
       </button>
 
       {mounted && open && rect && createPortal(

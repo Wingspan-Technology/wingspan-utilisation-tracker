@@ -13,7 +13,7 @@ export default async function DashboardLayout({
   if (!session) redirect("/login");
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-dvh flex flex-col">
       <header className="h-14 bg-zinc-950 flex items-center justify-between px-6">
         <div className="flex items-center gap-3">
           <span className="font-bold text-white">Wingspan</span>
@@ -23,7 +23,7 @@ export default async function DashboardLayout({
         <div className="flex items-center gap-4">
           {session.role === "ADMIN" && (
             <Link href="/admin/clients" className="text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1.5">
-              <LayoutDashboard className="h-4 w-4" />
+              <LayoutDashboard className="h-5 w-5 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline text-xs">Admin view</span>
             </Link>
           )}

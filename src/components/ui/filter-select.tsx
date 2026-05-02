@@ -42,7 +42,7 @@ export function FilterSelect({ value, options, placeholder, disabled, onChange }
         <span className={cn("flex-1 truncate", !selected && "text-muted-foreground")}>
           {selected ? selected.label : placeholder}
         </span>
-        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <ChevronDown className="h-5 w-5 sm:h-4 sm:w-4 shrink-0 text-muted-foreground" />
       </button>
 
       {open && (
