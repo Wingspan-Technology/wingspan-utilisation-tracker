@@ -116,6 +116,8 @@ interface TimeEntryFormProps {
   defaultDate?: string;
   onSuccess: (entry: TimeEntry) => void;
   targetUserId?: string;
+  targetUserName?: string;
+  users?: { id: string; name: string }[];
 }
 
 export function TimeEntryForm({
@@ -125,10 +127,14 @@ export function TimeEntryForm({
   defaultDate,
   onSuccess,
   targetUserId,
+  targetUserName,
+  users,
 }: TimeEntryFormProps) {
   const isEdit = !!entry;
+  const showDeveloperPicker = !!users?.length && !targetUserId && !isEdit;
   const [loading, setLoading] = useState(false);
   const [attempted, setAttempted] = useState(false);
+  const [selectedDevUserId, setSelectedDevUserId] = useState("");
   const [tasks, setTasks] = useState<Task[]>([]);
   const today = format(new Date(), "yyyy-MM-dd");
   const displayDate = format(
@@ -158,6 +164,7 @@ export function TimeEntryForm({
   useEffect(() => {
     if (open) {
       setAttempted(false);
+      setSelectedDevUserId("");
       setSelectedClientId(entry?.task.project.client.id ?? "");
       setSelectedProjectId(entry?.task.project.id ?? "");
       setForm({
@@ -171,6 +178,7 @@ export function TimeEntryForm({
 
   function reset() {
     setAttempted(false);
+    setSelectedDevUserId("");
     setSelectedClientId(entry?.task.project.client.id ?? "");
     setSelectedProjectId(entry?.task.project.id ?? "");
     setForm({
@@ -219,6 +227,7 @@ export function TimeEntryForm({
 
   const parsedHours = parseFloat(form.hours);
   const errors = {
+    developer: showDeveloperPicker && !selectedDevUserId,
     client: !selectedClientId,
     project: !selectedProjectId,
     task: !form.taskId,
@@ -242,7 +251,7 @@ export function TimeEntryForm({
           body: JSON.stringify({
             ...form,
             hours: parsedHours,
-            ...(targetUserId && !isEdit ? { userId: targetUserId } : {}),
+            ...(!isEdit && (targetUserId || selectedDevUserId) ? { userId: targetUserId || selectedDevUserId } : {}),
           }),
         },
       );
@@ -272,16 +281,34 @@ export function TimeEntryForm({
         if (!v) reset();
       }}
     >
-      <DialogContent className="max-w-md">
-        <DialogHeader className="gap-0.5">
+      <DialogContent className="max-w-md flex flex-col max-h-[90dvh]">
+        <DialogHeader className="gap-0.5 shrink-0">
           <DialogTitle className="text-xl">
             {isEdit ? "Edit Time Entry" : "Log Time"}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground/70">
-            {displayDate}
+            {displayDate}{targetUserName && ` · ${targetUserName}`}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-7 pt-3">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 pt-3">
+        <div className="flex-1 overflow-y-auto space-y-7 pr-1">
+          {/* Developer */}
+          {showDeveloperPicker && (
+            <div className="space-y-1.5">
+              <Label>Developer *</Label>
+              <ListPicker
+                items={users!}
+                value={selectedDevUserId}
+                hasError={attempted && errors.developer}
+                onChange={setSelectedDevUserId}
+              />
+              {attempted && errors.developer
+                ? <FieldError />
+                : <p className="text-xs text-muted-foreground">The developer this time is logged for</p>
+              }
+            </div>
+          )}
+
           {/* Client */}
           <div className="space-y-1.5">
             <Label>Client *</Label>
@@ -372,7 +399,9 @@ export function TimeEntryForm({
             }
           </div>
 
-          <div className="flex flex-col gap-1.5">
+        </div>
+
+          <div className="flex flex-col gap-1.5 shrink-0 pt-7">
             {attempted && hasErrors && (
               <p className="text-xs text-destructive text-right">
                 Errors in form — please complete all required fields.

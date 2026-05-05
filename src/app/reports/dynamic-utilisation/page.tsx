@@ -9,8 +9,10 @@ export default async function DeveloperSummaryPage({
 }) {
   const selectedDeveloperId = searchParams.developer ?? null;
   const selectedClientId = searchParams.client ?? null;
-  const selectedMonth = searchParams.month ?? null;
   const selectedYear = searchParams.year ?? null;
+  const now = new Date();
+  const defaultMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+  const selectedMonth = searchParams.month ?? (selectedYear ? null : defaultMonth);
 
   const [developers, clients] = await Promise.all([
     prisma.user.findMany({

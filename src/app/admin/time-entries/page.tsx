@@ -20,7 +20,6 @@ import {
   Trash2,
   User,
 } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
 import { ListPicker } from "@/components/ui/list-picker";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { Button } from "@/components/ui/button";
@@ -41,7 +40,6 @@ import type { TimeEntry, User as UserType } from "@/types";
 
 
 export default function AdminTimeEntriesPage() {
-  const { data: session } = authClient.useSession();
   const searchParams = useSearchParams();
   const paramUserId = searchParams.get("userId") ?? "";
   const paramMonth = searchParams.get("month") ?? "";
@@ -69,18 +67,13 @@ export default function AdminTimeEntriesPage() {
       .then((d) => d && setUsers(d.filter((u: UserType) => u.isActive)));
   }, []);
 
-  // Default to the logged-in user once both the session and user list are ready.
-  useEffect(() => {
-    if (session?.user?.id && users.length > 0 && !selectedUserId) {
-      setSelectedUserId(session.user.id);
-    }
-  }, [session, users]); // eslint-disable-line
-
   async function loadEntries(userId: string, month: Date) {
-    if (!userId) { setEntries([]); return; }
     const from = format(startOfMonth(month), "yyyy-MM-dd");
     const to = format(endOfMonth(month), "yyyy-MM-dd");
-    const res = await fetch(`/api/time-entries?userId=${userId}&from=${from}&to=${to}`);
+    const url = userId
+      ? `/api/time-entries?userId=${userId}&from=${from}&to=${to}`
+      : `/api/time-entries?from=${from}&to=${to}`;
+    const res = await fetch(url);
     if (res.ok) setEntries(await res.json());
   }
 
@@ -163,10 +156,11 @@ export default function AdminTimeEntriesPage() {
   const billableHours = entries.filter((e) => e.task.isBillable).reduce((s, e) => s + e.hours, 0);
   const nonBillableHours = totalHours - billableHours;
   const selectedUser = users.find((u) => u.id === selectedUserId);
-  const userItems = users.map((u) => ({
+  const developerItems = users.map((u) => ({
     id: u.id,
     name: u.role === "ADMIN" ? `${u.name} (Admin)` : u.name,
   }));
+  const userItems = [{ id: "", name: "All Developers" }, ...developerItems];
 
   const selectedDayEntries = selectedDay ? (entriesByDate[selectedDay] ?? []) : [];
   const selectedDayTotal = selectedDayEntries.reduce((s, e) => s + e.hours, 0);
@@ -196,22 +190,14 @@ export default function AdminTimeEntriesPage() {
         </div>
       </div>
 
-      {!selectedUserId ? (
-        <div className="flex items-center justify-center rounded-lg border border-dashed border-border bg-muted/10 min-h-64">
-          <div className="text-center">
-            <User className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">Select a developer above to view or log their time</p>
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* Month navigation */}
-          <MonthNav currentMonth={currentMonth} onPrev={goToPrevMonth} onNext={goToNextMonth} onToday={goToThisMonth} />
+      <>
+        {/* Month navigation */}
+        <MonthNav currentMonth={currentMonth} onPrev={goToPrevMonth} onNext={goToNextMonth} onToday={goToThisMonth} />
 
-          {/* Summary cards */}
-          <HoursSummaryCards totalHours={totalHours} billableHours={billableHours} nonBillableHours={nonBillableHours} />
+        {/* Summary cards */}
+        <HoursSummaryCards totalHours={totalHours} billableHours={billableHours} nonBillableHours={nonBillableHours} />
 
-          {/* Calendar grid */}
+        {/* Calendar grid */}
           <div className="bg-card rounded-lg border overflow-hidden">
             <div className="grid grid-cols-7 border-b bg-muted/40">
               {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
@@ -289,24 +275,16 @@ export default function AdminTimeEntriesPage() {
               })}
             </div>
           </div>
-        </>
-      )}
+      </>
 
       {/* Day detail dialog */}
       <Dialog open={!!selectedDay} onOpenChange={(v) => !v && setSelectedDay(null)}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader className="gap-0.5">
-            <DialogTitle className="text-xl">
-              Time Entries
-              {selectedUser && (
-                <span className="ml-2 text-base font-normal text-muted-foreground">
-                  — {selectedUser.name}
-                </span>
-              )}
-            </DialogTitle>
+            <DialogTitle className="text-xl">Time Entries</DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground/70">
-              {selectedDay &&
-                format(new Date(selectedDay + "T00:00:00"), "EEEE, d MMMM yyyy")}
+              {selectedDay && format(new Date(selectedDay + "T00:00:00"), "EEEE, d MMMM yyyy")}
+              {selectedUser && ` · ${selectedUser.name}`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -329,6 +307,11 @@ export default function AdminTimeEntriesPage() {
                       <div className="text-xs text-muted-foreground/60 mt-1.5">
                         {entry.task.project.name}
                       </div>
+                      {!selectedUserId && (
+                        <div className="text-xs text-muted-foreground/50 mt-1">
+                          {entry.user.name}
+                        </div>
+                      )}
                       <div className="mt-1.5">
                         {entry.task.isBillable ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-blue-950/80 px-2 py-0.5 text-xs font-medium text-blue-300">
@@ -437,6 +420,8 @@ export default function AdminTimeEntriesPage() {
         defaultDate={formDate ?? format(new Date(), "yyyy-MM-dd")}
         onSuccess={handleSuccess}
         targetUserId={selectedUserId || undefined}
+        targetUserName={selectedUser?.name}
+        users={!selectedUserId ? developerItems : undefined}
       />
       <ConfirmDialog
         open={!!deleteEntry}
