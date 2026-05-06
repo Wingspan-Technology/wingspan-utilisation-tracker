@@ -19,7 +19,7 @@ export function AdminShell({ name, email, role, children }: AdminShellProps) {
   return (
     <div className="flex min-h-dvh">
       {/* Desktop sidebar */}
-      <div className="hidden md:block">
+      <div className="hidden md:block sticky top-0 h-dvh shrink-0">
         <AdminSidebar />
       </div>
 
@@ -37,7 +37,7 @@ export function AdminShell({ name, email, role, children }: AdminShellProps) {
       )}
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 bg-zinc-950 flex items-center px-6 gap-4 shrink-0">
+        <header className="h-14 bg-background flex items-center px-6 gap-4 shrink-0">
           <button
             className="md:hidden text-zinc-400 hover:text-white transition-colors p-1 rounded"
             onClick={() => setMobileOpen(true)}

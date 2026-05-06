@@ -1,7 +1,7 @@
 "use client";
 
 import { format, isSameMonth } from "date-fns";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface MonthNavProps {
@@ -15,7 +15,7 @@ export function MonthNav({ currentMonth, onPrev, onNext, onToday }: MonthNavProp
   const isCurrentMonth = isSameMonth(currentMonth, new Date());
 
   return (
-    <div className="flex flex-col items-center gap-1 w-full">
+    <div className="flex flex-col items-center gap-1 w-72 mx-auto">
       <div className="flex items-center gap-3 w-full">
         <Button variant="outline" size="icon-sm" onClick={onPrev}><ChevronLeft /></Button>
         <p className="text-xl font-bold text-foreground flex-1 text-center">
@@ -25,6 +25,7 @@ export function MonthNav({ currentMonth, onPrev, onNext, onToday }: MonthNavProp
       </div>
       {!isCurrentMonth && (
         <Button variant="ghost" size="sm" onClick={onToday} className="text-muted-foreground">
+          <CalendarDays className="h-3.5 w-3.5" />
           Today
         </Button>
       )}

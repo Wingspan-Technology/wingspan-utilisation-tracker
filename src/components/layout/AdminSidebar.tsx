@@ -25,14 +25,14 @@ export function AdminSidebar({ onClose }: AdminSidebarProps = {}) {
 
   const linkClass = (href: string, exact?: boolean) =>
     cn(
-      "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors",
+      "flex items-center px-3 py-3.5 md:py-2 rounded-md text-sm font-medium transition-colors",
       (exact ? pathname === href : pathname.startsWith(href))
         ? "text-white"
         : "text-zinc-400 hover:bg-white/10 hover:text-white"
     );
 
   return (
-    <aside className="w-64 bg-zinc-950 text-white min-h-dvh flex flex-col border-r border-white/15">
+    <aside className="w-64 bg-zinc-950 text-white h-full flex flex-col border-r border-white/15">
       <div className="h-14 flex items-center px-6 gap-4 shrink-0">
         {onClose && (
           <button
@@ -70,7 +70,7 @@ export function AdminSidebar({ onClose }: AdminSidebarProps = {}) {
         <Link
           href="/dashboard"
           onClick={onClose}
-          className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-zinc-400 hover:bg-white/10 hover:text-white transition-colors"
+          className="flex items-center gap-2 px-3 py-3.5 md:py-2 rounded-md text-sm font-medium text-zinc-400 hover:bg-white/10 hover:text-white transition-colors"
         >
           <MonitorSmartphone className="h-5 w-5 shrink-0" />
           Developer view
