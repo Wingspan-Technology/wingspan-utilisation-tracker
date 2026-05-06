@@ -15,7 +15,7 @@ export function MonthNav({ currentMonth, onPrev, onNext, onToday }: MonthNavProp
   const isCurrentMonth = isSameMonth(currentMonth, new Date());
 
   return (
-    <div className="flex flex-col items-center gap-1 w-72 mx-auto">
+    <div className="flex flex-col items-center gap-1 w-full md:w-72 md:mx-auto">
       <div className="flex items-center gap-3 w-full">
         <Button variant="outline" size="icon-sm" onClick={onPrev}><ChevronLeft /></Button>
         <p className="text-xl font-bold text-foreground flex-1 text-center">

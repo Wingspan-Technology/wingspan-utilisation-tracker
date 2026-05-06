@@ -2,18 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MonitorSmartphone, X } from "lucide-react";
+import { BarChart2, Briefcase, Clock, MonitorSmartphone, ScrollText, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/admin/clients", label: "Clients" },
-  { href: "/admin/users", label: "Users" },
-  { href: "/admin/time-entries", label: "Time Entries" },
-  { href: "/admin/audit-log", label: "Audit Log" },
+  { href: "/admin/clients", label: "Clients", icon: Briefcase },
+  { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/time-entries", label: "Time Entries", icon: Clock },
+  { href: "/admin/audit-log", label: "Audit Log", icon: ScrollText },
 ];
 
 const reportItems = [
-  { href: "/reports/dynamic-utilisation", label: "Dynamic Utilisation" },
+  { href: "/reports/dynamic-utilisation", label: "Dynamic Utilisation", icon: BarChart2 },
 ];
 
 interface AdminSidebarProps {
@@ -49,9 +49,10 @@ export function AdminSidebar({ onClose }: AdminSidebarProps = {}) {
         </div>
       </div>
       <nav className="flex-1 p-4 space-y-1">
-        {navItems.map((item) => (
-          <Link key={item.href} href={item.href} className={linkClass(item.href)} onClick={onClose}>
-            {item.label}
+        {navItems.map(({ href, label, icon: Icon }) => (
+          <Link key={href} href={href} className={linkClass(href)} onClick={onClose}>
+            <Icon className="h-4 w-4 shrink-0 mr-2" />
+            {label}
           </Link>
         ))}
 
@@ -59,9 +60,10 @@ export function AdminSidebar({ onClose }: AdminSidebarProps = {}) {
           <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
             Reports
           </p>
-          {reportItems.map((item) => (
-            <Link key={item.href} href={item.href} className={linkClass(item.href)} onClick={onClose}>
-              {item.label}
+          {reportItems.map(({ href, label, icon: Icon }) => (
+            <Link key={href} href={href} className={linkClass(href)} onClick={onClose}>
+              <Icon className="h-4 w-4 shrink-0 mr-2" />
+              {label}
             </Link>
           ))}
         </div>
