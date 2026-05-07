@@ -12,7 +12,7 @@ export async function PUT(
     return Response.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await params;
-  const { email, name, role, isActive } = await req.json();
+  const { email, name, role, isActive, dayRate } = await req.json();
 
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) return Response.json({ error: "Not found" }, { status: 404 });
@@ -33,6 +33,7 @@ export async function PUT(
       name: name ?? user.name,
       role: role === "ADMIN" ? "ADMIN" : role === "USER" ? "USER" : user.role,
       isActive: isActive ?? user.isActive,
+      dayRate: dayRate !== undefined ? (dayRate != null ? parseFloat(dayRate) : null) : undefined,
     },
     select: {
       id: true,
@@ -40,6 +41,7 @@ export async function PUT(
       name: true,
       role: true,
       isActive: true,
+      dayRate: true,
       createdAt: true,
     },
   });

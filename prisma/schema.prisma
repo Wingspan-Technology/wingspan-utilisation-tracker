@@ -16,6 +16,7 @@ model User {
   image         String?
   role          String    @default("USER")
   isActive      Boolean   @default(true)
+  dayRate       Float?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]

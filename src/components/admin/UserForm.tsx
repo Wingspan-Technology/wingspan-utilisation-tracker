@@ -35,6 +35,8 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
     email: user?.email ?? "",
     role: user?.role ?? "USER",
     isActive: user?.isActive ?? true,
+    dayRate: user?.dayRate?.toString() ?? "",
+    fixedPrice: user?.dayRate == null && !!user,
   });
 
   useEffect(() => {
@@ -43,6 +45,8 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
       email: user?.email ?? "",
       role: user?.role ?? "USER",
       isActive: user?.isActive ?? true,
+      dayRate: user?.dayRate?.toString() ?? "",
+      fixedPrice: user?.dayRate == null && !!user,
     });
   }, [open]); // eslint-disable-line
 
@@ -52,6 +56,8 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
       email: user?.email ?? "",
       role: user?.role ?? "USER",
       isActive: user?.isActive ?? true,
+      dayRate: user?.dayRate?.toString() ?? "",
+      fixedPrice: user?.dayRate == null && !!user,
     });
   }
 
@@ -64,6 +70,7 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
         email: form.email,
         role: form.role,
         isActive: form.isActive,
+        dayRate: form.fixedPrice ? null : (form.dayRate !== "" ? parseFloat(form.dayRate) : null),
       };
 
       const res = await fetch(
@@ -75,14 +82,15 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
         }
       );
 
-      const data = await res.json();
+      let data: Record<string, unknown> | null = null;
+      try { data = await res.json(); } catch { /* empty body */ }
       if (!res.ok) {
-        toast.error(data.error || "Failed to save user");
+        toast.error((data?.error as string) || "Failed to save user");
         return;
       }
 
       toast.success(isEdit ? "User updated" : "User created");
-      onSuccess(data);
+      onSuccess(data as unknown as User);
       onOpenChange(false);
       reset();
     } finally {
@@ -123,6 +131,30 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
               value={form.role}
               onChange={(id) => setForm({ ...form, role: id as Role })}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="dayRate">Day Rate (£)</Label>
+            <div className="flex items-center gap-3">
+              <Input
+                id="dayRate"
+                type="number"
+                min="0"
+                step="any"
+                placeholder="e.g. 450"
+                value={form.fixedPrice ? "" : form.dayRate}
+                onChange={(e) => setForm({ ...form, dayRate: e.target.value })}
+                disabled={form.fixedPrice}
+                className="flex-1"
+              />
+              <div className="flex items-center gap-2 shrink-0">
+                <Switch
+                  id="fixedPrice"
+                  checked={form.fixedPrice}
+                  onCheckedChange={(v) => setForm({ ...form, fixedPrice: v, dayRate: v ? "" : form.dayRate })}
+                />
+                <Label htmlFor="fixedPrice" className="whitespace-nowrap text-muted-foreground">Fixed price (N/A)</Label>
+              </div>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <Switch

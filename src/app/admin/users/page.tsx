@@ -76,6 +76,7 @@ export default function UsersPage() {
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
+              <TableHead>Day Rate</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-20" />
             </TableRow>
@@ -87,6 +88,7 @@ export default function UsersPage() {
                   <TableCell><Skeleton className="h-4 w-28" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-44" /></TableCell>
                   <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                   <TableCell><Skeleton className="h-5 w-14 rounded-full" /></TableCell>
                   <TableCell>
                     <div className="flex gap-2 justify-end">
@@ -97,7 +99,7 @@ export default function UsersPage() {
                 </TableRow>
               ))
             ) : users.length === 0 ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No users yet.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No users yet.</TableCell></TableRow>
             ) : users.map((user) => (
               <TableRow key={user.id}>
                 <TableCell className="font-medium">{user.name}</TableCell>
@@ -106,6 +108,9 @@ export default function UsersPage() {
                   <Badge variant={user.role === "ADMIN" ? "default" : "secondary"}>
                     {user.role === "ADMIN" ? "Admin" : "Developer"}
                   </Badge>
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {user.dayRate != null ? `£${user.dayRate.toLocaleString()}` : <span className="text-muted-foreground/50">N/A</span>}
                 </TableCell>
                 <TableCell>
                   <Badge variant={user.isActive ? "outline" : "destructive"}>

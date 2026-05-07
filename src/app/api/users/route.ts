@@ -15,6 +15,7 @@ export async function GET() {
       name: true,
       role: true,
       isActive: true,
+      dayRate: true,
       createdAt: true,
     },
     orderBy: { name: "asc" },
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
   if (session.role !== "ADMIN")
     return Response.json({ error: "Forbidden" }, { status: 403 });
 
-  const { email, name, role, isActive } = await req.json();
+  const { email, name, role, isActive, dayRate } = await req.json();
 
   if (!email || !name) {
     return Response.json({ error: "Email and name are required" }, { status: 400 });
@@ -47,6 +48,7 @@ export async function POST(req: NextRequest) {
       emailVerified: false,
       role: role === "ADMIN" ? "ADMIN" : "USER",
       isActive: isActive ?? true,
+      dayRate: dayRate != null ? parseFloat(dayRate) : null,
     },
     select: {
       id: true,
@@ -54,6 +56,7 @@ export async function POST(req: NextRequest) {
       name: true,
       role: true,
       isActive: true,
+      dayRate: true,
       createdAt: true,
     },
   });
