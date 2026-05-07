@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { format, startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
-import { User } from "lucide-react";
+import { User, Users } from "lucide-react";
 import { ListPicker } from "@/components/ui/list-picker";
 import { MonthNav } from "@/components/shared/MonthNav";
 import { HoursSummaryCards } from "@/components/shared/HoursSummaryCards";
@@ -45,7 +45,10 @@ export default function AdminTimeEntriesPage() {
     id: u.id,
     name: u.role === "ADMIN" ? `${u.name} (Admin)` : u.name,
   }));
-  const userItems = [{ id: "", name: "All Developers" }, ...developerItems];
+  const userItems = [
+    { id: "", name: "All Developers", icon: <Users className="h-3.5 w-3.5" /> },
+    ...developerItems.map((u) => ({ ...u, icon: <User className="h-3.5 w-3.5" /> })),
+  ];
   const selectedUser = users.find((u) => u.id === selectedUserId);
 
   const totalHours = entries.reduce((s, e) => s + e.hours, 0);
@@ -59,7 +62,6 @@ export default function AdminTimeEntriesPage() {
           <p className="text-sm text-muted-foreground mt-1">Log or edit time on behalf of a developer</p>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <User className="h-4 w-4 text-muted-foreground shrink-0" />
           <div className="flex-1 sm:w-56">
             <ListPicker
               items={userItems}
