@@ -15,6 +15,7 @@ export type TaskRow = {
   taskName: string;
   isBillable: boolean;
   days: number;
+  cost: number;
 };
 
 export type ProjectRow = {
@@ -22,6 +23,8 @@ export type ProjectRow = {
   projectName: string;
   billableDays: number;
   nonBillableDays: number;
+  billableCost: number;
+  nonBillableCost: number;
   tasks: TaskRow[];
 };
 
@@ -29,8 +32,12 @@ type ClientGroup = {
   name: string;
   billableDays: number;
   nonBillableDays: number;
+  billableCost: number;
+  nonBillableCost: number;
   projects: ProjectRow[];
 };
+
+type ViewMode = "days" | "cost";
 
 type Props = {
   rows: ProjectRow[];
@@ -43,13 +50,18 @@ type Props = {
   selectedYear: string | null;
 };
 
-function fmt(n: number): string {
+function fmtDays(n: number): string {
   return n.toFixed(1) + "d";
+}
+
+function fmtCost(n: number): string {
+  return "£" + Math.round(n).toLocaleString("en-GB");
 }
 
 export function ReportChart({ rows, developers, clients, months, selectedDeveloper, selectedClient, selectedMonth, selectedYear }: Props) {
   const router = useRouter();
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<ViewMode>("days");
 
   const years = [...new Set(months.map((m) => m.split("-")[0]))].sort();
   const currentYear = selectedMonth ? selectedMonth.split("-")[0] : selectedYear;
@@ -95,6 +107,10 @@ export function ReportChart({ rows, developers, clients, months, selectedDevelop
     });
   }
 
+  function fmt(days: number, cost: number): string {
+    return viewMode === "cost" ? fmtCost(cost) : fmtDays(days);
+  }
+
   const developerOptions = developers.map((d) => ({ value: d.id, label: d.name }));
   const clientOptions = clients.map((c) => ({ value: c.id, label: c.name }));
   const yearOptions = years.map((y) => ({ value: y, label: y }));
@@ -109,10 +125,14 @@ export function ReportChart({ rows, developers, clients, months, selectedDevelop
       name: row.clientName,
       billableDays: 0,
       nonBillableDays: 0,
+      billableCost: 0,
+      nonBillableCost: 0,
       projects: [],
     };
     g.billableDays += row.billableDays;
     g.nonBillableDays += row.nonBillableDays;
+    g.billableCost += row.billableCost;
+    g.nonBillableCost += row.nonBillableCost;
     g.projects.push(row);
     clientMap.set(row.clientName, g);
   }
@@ -127,13 +147,19 @@ export function ReportChart({ rows, developers, clients, months, selectedDevelop
     }
   }
 
-  const maxProjectDays = Math.max(...rows.map((r) => r.billableDays + r.nonBillableDays), 0.001);
   const allTasks = rows.flatMap((r) => r.tasks);
+
+  const maxProjectDays = Math.max(...rows.map((r) => r.billableDays + r.nonBillableDays), 0.001);
+  const maxProjectCost = Math.max(...rows.map((r) => r.billableCost + r.nonBillableCost), 0.001);
   const maxTaskDays = Math.max(...allTasks.map((t) => t.days), 0.001);
+  const maxTaskCost = Math.max(...allTasks.map((t) => t.cost), 0.001);
 
   const totalBillable = rows.reduce((s, r) => s + r.billableDays, 0);
   const totalNonBillable = rows.reduce((s, r) => s + r.nonBillableDays, 0);
   const totalDays = totalBillable + totalNonBillable;
+  const totalBillableCost = rows.reduce((s, r) => s + r.billableCost, 0);
+  const totalNonBillableCost = rows.reduce((s, r) => s + r.nonBillableCost, 0);
+  const totalCost = totalBillableCost + totalNonBillableCost;
 
   return (
     <div className="space-y-6">
@@ -166,30 +192,54 @@ export function ReportChart({ rows, developers, clients, months, selectedDevelop
           disabled={!currentYear}
           onChange={handleMonthChange}
         />
+        <div className="flex w-fit rounded-md border border-border overflow-hidden text-sm sm:ml-auto shrink-0">
+          <button
+            className={`px-3 py-1.5 transition-colors ${viewMode === "days" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted/50"}`}
+            onClick={() => setViewMode("days")}
+          >
+            Days
+          </button>
+          <button
+            className={`px-3 py-1.5 border-l border-border transition-colors ${viewMode === "cost" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted/50"}`}
+            onClick={() => setViewMode("cost")}
+          >
+            Cost
+          </button>
+        </div>
       </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardContent className="py-3 flex items-center justify-between">
-            <span className="text-sm font-medium text-muted-foreground">Total Days</span>
-            <span className="text-xl font-bold">{fmt(totalDays)}</span>
+            <span className="text-sm font-medium text-muted-foreground">
+              {viewMode === "cost" ? "Total Cost" : "Total Days"}
+            </span>
+            <span className="text-xl font-bold">
+              {viewMode === "cost" ? fmtCost(totalCost) : fmtDays(totalDays)}
+            </span>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-3 flex items-center justify-between">
             <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: BILLABLE }}>
-              <Banknote className="h-3.5 w-3.5 shrink-0" /> Billable Days
+              <Banknote className="h-3.5 w-3.5 shrink-0" />
+              {viewMode === "cost" ? "Billable Cost" : "Billable Days"}
             </span>
-            <span className="text-xl font-bold" style={{ color: BILLABLE }}>{fmt(totalBillable)}</span>
+            <span className="text-xl font-bold" style={{ color: BILLABLE }}>
+              {viewMode === "cost" ? fmtCost(totalBillableCost) : fmtDays(totalBillable)}
+            </span>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-3 flex items-center justify-between">
             <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: NON_BILLABLE }}>
-              <Leaf className="h-3.5 w-3.5 shrink-0" /> Non-billable Days
+              <Leaf className="h-3.5 w-3.5 shrink-0" />
+              {viewMode === "cost" ? "Non-billable Cost" : "Non-billable Days"}
             </span>
-            <span className="text-xl font-bold" style={{ color: NON_BILLABLE }}>{fmt(totalNonBillable)}</span>
+            <span className="text-xl font-bold" style={{ color: NON_BILLABLE }}>
+              {viewMode === "cost" ? fmtCost(totalNonBillableCost) : fmtDays(totalNonBillable)}
+            </span>
           </CardContent>
         </Card>
       </div>
@@ -200,19 +250,23 @@ export function ReportChart({ rows, developers, clients, months, selectedDevelop
       ) : (
         <div className="space-y-4">
           {clientGroups.map((client) => {
-            const clientTotal = client.billableDays + client.nonBillableDays;
+            const clientBillable = viewMode === "cost" ? client.billableCost : client.billableDays;
+            const clientNonBillable = viewMode === "cost" ? client.nonBillableCost : client.nonBillableDays;
+            const clientTotal = clientBillable + clientNonBillable;
             return (
               <div key={client.name} className="bg-card rounded-lg border border-border overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/20">
                   <span className="font-semibold text-foreground">{client.name}</span>
                   <div className="flex items-center gap-5 text-sm">
                     <span className="flex items-center gap-1.5 font-medium tabular-nums" style={{ color: BILLABLE }}>
-                      <Banknote className="h-3.5 w-3.5 shrink-0" /> {fmt(client.billableDays)}
+                      <Banknote className="h-3.5 w-3.5 shrink-0" /> {fmt(client.billableDays, client.billableCost)}
                     </span>
                     <span className="flex items-center gap-1.5 font-medium tabular-nums" style={{ color: NON_BILLABLE }}>
-                      <Leaf className="h-3.5 w-3.5 shrink-0" /> {fmt(client.nonBillableDays)}
+                      <Leaf className="h-3.5 w-3.5 shrink-0" /> {fmt(client.nonBillableDays, client.nonBillableCost)}
                     </span>
-                    <span className="font-semibold text-foreground tabular-nums">{fmt(clientTotal)}</span>
+                    <span className="font-semibold text-foreground tabular-nums">
+                      {viewMode === "cost" ? fmtCost(clientTotal) : fmtDays(clientTotal)}
+                    </span>
                   </div>
                 </div>
 
@@ -220,10 +274,13 @@ export function ReportChart({ rows, developers, clients, months, selectedDevelop
                   {client.projects.map((proj) => {
                     const projKey = `${client.name}::${proj.projectName}`;
                     const expanded = expandedProjects.has(projKey);
-                    const projTotal = proj.billableDays + proj.nonBillableDays;
-                    const barWidthPct = (projTotal / maxProjectDays) * 100;
-                    const billableFrac = projTotal > 0 ? proj.billableDays / projTotal : 0;
-                    const nonBillableFrac = projTotal > 0 ? proj.nonBillableDays / projTotal : 0;
+                    const projBillable = viewMode === "cost" ? proj.billableCost : proj.billableDays;
+                    const projNonBillable = viewMode === "cost" ? proj.nonBillableCost : proj.nonBillableDays;
+                    const projTotal = projBillable + projNonBillable;
+                    const maxProjValue = viewMode === "cost" ? maxProjectCost : maxProjectDays;
+                    const barWidthPct = (projTotal / maxProjValue) * 100;
+                    const billableFrac = projTotal > 0 ? projBillable / projTotal : 0;
+                    const nonBillableFrac = projTotal > 0 ? projNonBillable / projTotal : 0;
                     return (
                       <div key={proj.projectName}>
                         <div
@@ -239,12 +296,14 @@ export function ReportChart({ rows, developers, clients, months, selectedDevelop
                             </span>
                             <div className="flex items-center gap-5 text-xs">
                               <span className="flex items-center gap-1 tabular-nums" style={{ color: BILLABLE }}>
-                                <Banknote className="h-3 w-3 shrink-0" /> {fmt(proj.billableDays)}
+                                <Banknote className="h-3 w-3 shrink-0" /> {fmt(proj.billableDays, proj.billableCost)}
                               </span>
                               <span className="flex items-center gap-1 tabular-nums" style={{ color: NON_BILLABLE }}>
-                                <Leaf className="h-3 w-3 shrink-0" /> {fmt(proj.nonBillableDays)}
+                                <Leaf className="h-3 w-3 shrink-0" /> {fmt(proj.nonBillableDays, proj.nonBillableCost)}
                               </span>
-                              <span className="text-muted-foreground tabular-nums">{fmt(projTotal)}</span>
+                              <span className="text-muted-foreground tabular-nums">
+                                {viewMode === "cost" ? fmtCost(projTotal) : fmtDays(projTotal)}
+                              </span>
                             </div>
                           </div>
                           <div
@@ -259,7 +318,9 @@ export function ReportChart({ rows, developers, clients, months, selectedDevelop
                         {expanded && (
                           <div className="divide-y divide-border/50 border-t border-border/50">
                             {proj.tasks.map((task) => {
-                              const taskBarWidthPct = (task.days / maxTaskDays) * 100;
+                              const taskValue = viewMode === "cost" ? task.cost : task.days;
+                              const maxTaskValue = viewMode === "cost" ? maxTaskCost : maxTaskDays;
+                              const taskBarWidthPct = (taskValue / maxTaskValue) * 100;
                               return (
                                 <div key={task.taskName} className="px-8 py-2 space-y-1.5">
                                   <div className="flex items-center justify-between">
@@ -271,14 +332,14 @@ export function ReportChart({ rows, developers, clients, months, selectedDevelop
                                       {task.isBillable
                                         ? <Banknote className="h-3 w-3 shrink-0" />
                                         : <Leaf className="h-3 w-3 shrink-0" />}
-                                      {fmt(task.days)}
+                                      {fmt(task.days, task.cost)}
                                     </span>
                                   </div>
                                   <div
                                     className="h-2 rounded-sm"
                                     style={{
                                       width: `${taskBarWidthPct}%`,
-                                      minWidth: task.days > 0 ? 2 : 0,
+                                      minWidth: taskValue > 0 ? 2 : 0,
                                       backgroundColor: task.isBillable ? BILLABLE : NON_BILLABLE,
                                     }}
                                   />

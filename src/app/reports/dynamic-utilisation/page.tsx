@@ -73,6 +73,7 @@ export default async function DeveloperSummaryPage({
           project: { include: { client: true } },
         },
       },
+      user: { select: { dayRate: true } },
     },
   });
 
@@ -83,7 +84,9 @@ export default async function DeveloperSummaryPage({
       projectName: string;
       billableHours: number;
       nonBillableHours: number;
-      tasks: Map<string, { taskName: string; isBillable: boolean; hours: number }>;
+      billableCost: number;
+      nonBillableCost: number;
+      tasks: Map<string, { taskName: string; isBillable: boolean; hours: number; cost: number }>;
     }
   >();
 
@@ -96,21 +99,29 @@ export default async function DeveloperSummaryPage({
         projectName: project.name,
         billableHours: 0,
         nonBillableHours: 0,
+        billableCost: 0,
+        nonBillableCost: 0,
         tasks: new Map(),
       });
     }
     const acc = map.get(key)!;
+    const dayRate = entry.user?.dayRate;
+    const entryDays = entry.hours / 8;
     if (entry.task.isBillable) {
       acc.billableHours += entry.hours;
+      if (dayRate != null) acc.billableCost += entryDays * dayRate;
     } else {
       acc.nonBillableHours += entry.hours;
+      if (dayRate != null) acc.nonBillableCost += entryDays * dayRate;
     }
     const taskAcc = acc.tasks.get(entry.task.id) ?? {
       taskName: entry.task.name,
       isBillable: entry.task.isBillable,
       hours: 0,
+      cost: 0,
     };
     taskAcc.hours += entry.hours;
+    if (dayRate != null) taskAcc.cost += entryDays * dayRate;
     acc.tasks.set(entry.task.id, taskAcc);
   }
 
@@ -119,10 +130,13 @@ export default async function DeveloperSummaryPage({
     projectName: r.projectName,
     billableDays: r.billableHours / 8,
     nonBillableDays: r.nonBillableHours / 8,
+    billableCost: r.billableCost,
+    nonBillableCost: r.nonBillableCost,
     tasks: [...r.tasks.values()].map((t) => ({
       taskName: t.taskName,
       isBillable: t.isBillable,
       days: t.hours / 8,
+      cost: t.cost,
     })),
   }));
 
