@@ -22,6 +22,7 @@ model User {
   sessions      Session[]
   accounts      Account[]
   timeEntries   TimeEntry[]
+  apiKeys       ApiKey[]
 }
 
 model Session {
@@ -118,4 +119,16 @@ model TimeEntry {
   @@index([userId, date])
   @@index([taskId])
   @@index([date])
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  label       String
+  keyHash     String    @unique
+  hint        String
+  createdById String
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  isActive    Boolean   @default(true)
 }

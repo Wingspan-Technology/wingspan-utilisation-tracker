@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart2, Briefcase, Clock, MonitorSmartphone, ScrollText, Users, X } from "lucide-react";
+import { BarChart2, Briefcase, Clock, KeyRound, MonitorSmartphone, ScrollText, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -10,6 +10,7 @@ const navItems = [
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/time-entries", label: "Time Entries", icon: Clock },
   { href: "/admin/audit-log", label: "Audit Log", icon: ScrollText },
+  { href: "/admin/api-keys", label: "API Keys", icon: KeyRound },
 ];
 
 const reportItems = [
