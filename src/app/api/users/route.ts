@@ -21,7 +21,18 @@ export async function GET() {
     orderBy: { name: "asc" },
   });
 
-  return Response.json(users);
+  const lastEntries = await prisma.timeEntry.groupBy({
+    by: ["userId"],
+    _max: { date: true },
+  });
+  const lastEntryByUser = new Map(lastEntries.map((e) => [e.userId, e._max.date]));
+
+  const usersWithLastEntry = users.map((user) => ({
+    ...user,
+    lastEntryDate: lastEntryByUser.get(user.id) ?? null,
+  }));
+
+  return Response.json(usersWithLastEntry);
 }
 
 export async function POST(req: NextRequest) {

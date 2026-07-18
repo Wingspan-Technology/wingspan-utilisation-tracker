@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { differenceInCalendarDays } from "date-fns";
 import { toast } from "sonner";
-import { Pencil, Trash2 } from "lucide-react";
+import { Shield, User as UserIcon } from "lucide-react";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -20,12 +22,23 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { User } from "@/types";
 
 export default function UsersPage() {
+  const searchParams = useSearchParams();
+  const showInactive = searchParams.get("status") === "inactive";
+
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const visibleUsers = users
+    .filter((u) => u.isActive !== showInactive)
+    .sort((a, b) => {
+      if (a.dayRate == null) return b.dayRate == null ? 0 : 1;
+      if (b.dayRate == null) return -1;
+      return b.dayRate - a.dayRate;
+    });
 
   async function load() {
     const res = await fetch("/api/users");
@@ -42,6 +55,11 @@ export default function UsersPage() {
       return [updated, ...prev];
     });
     setEditUser(null);
+  }
+
+  function handleDeleteRequest(user: User) {
+    setFormOpen(false);
+    setDeleteUser(user);
   }
 
   async function handleDelete() {
@@ -63,10 +81,11 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Users</h1>
-          <p className="text-muted-foreground text-sm mt-1">Manage developer accounts</p>
+          <h1 className="text-2xl font-bold text-foreground">{showInactive ? "Inactive Users" : "Users"}</h1>
         </div>
-        <Button className="w-full sm:w-auto" onClick={() => { setEditUser(null); setFormOpen(true); }}>Add User</Button>
+        {!showInactive && (
+          <Button className="w-full sm:w-auto" onClick={() => { setEditUser(null); setFormOpen(true); }}>Add User</Button>
+        )}
       </div>
 
       <div className="bg-card rounded-lg border">
@@ -75,10 +94,8 @@ export default function UsersPage() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
               <TableHead>Day Rate</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-20" />
+              <TableHead>Days Since Last Entry</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -87,71 +104,49 @@ export default function UsersPage() {
                 <TableRow key={i}>
                   <TableCell><Skeleton className="h-4 w-28" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-44" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-14 rounded-full" /></TableCell>
-                  <TableCell>
-                    <div className="flex gap-2 justify-end">
-                      <Skeleton className="h-5 w-5" />
-                      <Skeleton className="h-5 w-5" />
-                    </div>
-                  </TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                 </TableRow>
               ))
-            ) : users.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No users yet.</TableCell></TableRow>
-            ) : users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.name}</TableCell>
-                <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                <TableCell>
-                  <Badge variant={user.role === "ADMIN" ? "default" : "secondary"}>
-                    {user.role === "ADMIN" ? "Admin" : "Developer"}
-                  </Badge>
+            ) : visibleUsers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                  {showInactive ? "No inactive users." : "No users yet."}
                 </TableCell>
+              </TableRow>
+            ) : visibleUsers.map((user) => (
+              <TableRow
+                key={user.id}
+                className="cursor-pointer"
+                onClick={() => { setEditUser(user); setFormOpen(true); }}
+              >
+                <TableCell className="font-medium">
+                  <div className="flex items-center gap-2">
+                    <Tooltip.Provider delay={300}>
+                      <Tooltip.Root>
+                        <Tooltip.Trigger className="inline-flex text-muted-foreground">
+                          {user.role === "ADMIN" ? <Shield className="h-4 w-4" /> : <UserIcon className="h-4 w-4" />}
+                        </Tooltip.Trigger>
+                        <Tooltip.Portal>
+                          <Tooltip.Positioner sideOffset={8}>
+                            <Tooltip.Popup className="rounded-md bg-popover px-2 py-1 text-xs text-popover-foreground shadow-sm ring-1 ring-foreground/10">
+                              {user.role === "ADMIN" ? "Admin" : "Developer"}
+                            </Tooltip.Popup>
+                          </Tooltip.Positioner>
+                        </Tooltip.Portal>
+                      </Tooltip.Root>
+                    </Tooltip.Provider>
+                    {user.name}
+                  </div>
+                </TableCell>
+                <TableCell className="text-muted-foreground">{user.email}</TableCell>
                 <TableCell className="text-muted-foreground">
                   {user.dayRate != null ? `£${user.dayRate.toLocaleString()}` : <span className="text-muted-foreground/50">N/A</span>}
                 </TableCell>
-                <TableCell>
-                  <Badge variant={user.isActive ? "outline" : "destructive"}>
-                    {user.isActive ? "Active" : "Inactive"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Tooltip.Provider delay={300}>
-                    <div className="flex gap-2 justify-end">
-                      <Tooltip.Root>
-                        <Tooltip.Trigger
-                          onClick={() => { setEditUser(user); setFormOpen(true); }}
-                          className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <Pencil className="h-6 w-6 sm:h-5 sm:w-5" />
-                        </Tooltip.Trigger>
-                        <Tooltip.Portal>
-                          <Tooltip.Positioner sideOffset={8}>
-                            <Tooltip.Popup className="rounded-md bg-popover px-2 py-1 text-xs text-popover-foreground shadow-sm ring-1 ring-foreground/10">
-                              Edit user
-                            </Tooltip.Popup>
-                          </Tooltip.Positioner>
-                        </Tooltip.Portal>
-                      </Tooltip.Root>
-                      <Tooltip.Root>
-                        <Tooltip.Trigger
-                          onClick={() => setDeleteUser(user)}
-                          className="cursor-pointer text-muted-foreground hover:text-red-400 transition-colors"
-                        >
-                          <Trash2 className="h-6 w-6 sm:h-5 sm:w-5" />
-                        </Tooltip.Trigger>
-                        <Tooltip.Portal>
-                          <Tooltip.Positioner sideOffset={8}>
-                            <Tooltip.Popup className="rounded-md bg-popover px-2 py-1 text-xs text-popover-foreground shadow-sm ring-1 ring-foreground/10">
-                              Delete user
-                            </Tooltip.Popup>
-                          </Tooltip.Positioner>
-                        </Tooltip.Portal>
-                      </Tooltip.Root>
-                    </div>
-                  </Tooltip.Provider>
+                <TableCell className="text-muted-foreground">
+                  {user.lastEntryDate != null
+                    ? differenceInCalendarDays(new Date(), new Date(user.lastEntryDate))
+                    : <span className="text-muted-foreground/50">Never</span>}
                 </TableCell>
               </TableRow>
             ))}
@@ -159,11 +154,30 @@ export default function UsersPage() {
         </Table>
       </div>
 
+      <div className="-mt-3">
+        {showInactive ? (
+          <Link
+            href="/admin/users"
+            className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            Back to active users
+          </Link>
+        ) : (
+          <Link
+            href="/admin/users?status=inactive"
+            className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            View inactive users
+          </Link>
+        )}
+      </div>
+
       <UserForm
         open={formOpen}
         onOpenChange={(v) => { setFormOpen(v); if (!v) setEditUser(null); }}
         user={editUser}
         onSuccess={handleSuccess}
+        onDelete={handleDeleteRequest}
       />
       <ConfirmDialog
         open={!!deleteUser}
