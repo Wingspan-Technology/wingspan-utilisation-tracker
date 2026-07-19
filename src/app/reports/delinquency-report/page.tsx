@@ -49,8 +49,8 @@ export default async function DelinquencyReportPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Last Entry</TableHead>
+              <TableHead className="hidden md:table-cell">Email</TableHead>
+              <TableHead className="hidden md:table-cell">Last Entry</TableHead>
               <TableHead>Days Since Last Entry</TableHead>
             </TableRow>
           </TableHeader>
@@ -65,8 +65,8 @@ export default async function DelinquencyReportPage() {
               rows.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="hidden md:table-cell text-muted-foreground">{user.email}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">
                     {user.lastEntryDate != null ? (
                       format(user.lastEntryDate, "d MMM yyyy")
                     ) : (

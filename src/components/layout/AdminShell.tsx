@@ -45,10 +45,8 @@ export function AdminShell({ name, email, role, children }: AdminShellProps) {
           >
             <Menu className="h-6 w-6" />
           </button>
-          <div className="md:hidden">
-            <p className="text-sm font-bold text-white leading-none">Wingspan</p>
-            <p className="text-xs text-zinc-500 mt-0.5">Utilisation Tracker</p>
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/wingspan-logo.svg" alt="Wingspan" className="md:hidden h-5 w-auto" />
           <div className="flex-1" />
           <UserNav name={name} email={email} role={role} />
         </header>
