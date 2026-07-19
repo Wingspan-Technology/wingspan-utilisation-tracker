@@ -35,7 +35,7 @@ export function AdminSidebar({ onClose }: AdminSidebarProps = {}) {
 
   return (
     <aside className="w-64 bg-zinc-950 text-white h-full flex flex-col border-r border-white/15">
-      <div className="px-6 pt-6 pb-4 shrink-0">
+      <div className="px-6 pt-3 pb-4 shrink-0">
         {onClose && (
           <button
             onClick={onClose}
@@ -46,8 +46,8 @@ export function AdminSidebar({ onClose }: AdminSidebarProps = {}) {
           </button>
         )}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/wingspan-logo.svg" alt="Wingspan" className="w-full h-auto" />
-        <p className="text-sm text-white mt-1.5">Utilisation Tracker</p>
+        <img src="/wingspan-logo.svg" alt="Wingspan" className="block w-4/5 h-auto" />
+        <p className="text-lg font-semibold text-white mt-4">Utilisation Tracker</p>
       </div>
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map(({ href, label, icon: Icon }) => (
