@@ -17,7 +17,8 @@ export default async function DashboardLayout({
     <div className="min-h-dvh flex flex-col">
       <header className="h-14 bg-zinc-950 flex items-center justify-between px-6">
         <div className="flex items-center gap-3">
-          <span className="font-bold text-white">Wingspan</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/wingspan-logo.svg" alt="Wingspan" className="h-5 w-auto" />
           <span className="hidden sm:inline text-white/20">|</span>
           <span className="hidden sm:inline text-sm text-zinc-500">Utilisation Tracker</span>
         </div>

@@ -67,9 +67,10 @@ export default function LoginPage() {
   return (
     <div className="min-h-dvh flex items-center justify-center bg-background">
       <div className="w-full max-w-md px-4">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Wingspan</h1>
-          <p className="text-muted-foreground mt-1">Utilisation Tracker</p>
+        <div className="flex flex-col items-center mb-8">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/wingspan-logo.svg" alt="Wingspan" className="h-16 w-auto" />
+          <p className="text-lg text-white mt-2">Utilisation Tracker</p>
         </div>
         <Suspense>
           <LoginForm />

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { differenceInCalendarDays } from "date-fns";
 import { toast } from "sonner";
 import { Shield, User as UserIcon } from "lucide-react";
 import { Tooltip } from "@base-ui/react/tooltip";
@@ -95,7 +94,6 @@ export default function UsersPage() {
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Day Rate</TableHead>
-              <TableHead>Days Since Last Entry</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -105,12 +103,11 @@ export default function UsersPage() {
                   <TableCell><Skeleton className="h-4 w-28" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-44" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                 </TableRow>
               ))
             ) : visibleUsers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
                   {showInactive ? "No inactive users." : "No users yet."}
                 </TableCell>
               </TableRow>
@@ -142,11 +139,6 @@ export default function UsersPage() {
                 <TableCell className="text-muted-foreground">{user.email}</TableCell>
                 <TableCell className="text-muted-foreground">
                   {user.dayRate != null ? `£${user.dayRate.toLocaleString()}` : <span className="text-muted-foreground/50">N/A</span>}
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {user.lastEntryDate != null
-                    ? differenceInCalendarDays(new Date(), new Date(user.lastEntryDate))
-                    : <span className="text-muted-foreground/50">Never</span>}
                 </TableCell>
               </TableRow>
             ))}

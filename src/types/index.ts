@@ -8,7 +8,6 @@ export interface User {
   isActive: boolean;
   dayRate: number | null;
   createdAt: string;
-  lastEntryDate?: string | null;
 }
 
 export interface Client {

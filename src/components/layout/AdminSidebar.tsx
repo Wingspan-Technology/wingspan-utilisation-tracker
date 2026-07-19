@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart2, Briefcase, Clock, KeyRound, MonitorSmartphone, ScrollText, Users, X } from "lucide-react";
+import { AlertTriangle, BarChart2, Briefcase, Clock, KeyRound, MonitorSmartphone, ScrollText, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -15,6 +15,7 @@ const navItems = [
 
 const reportItems = [
   { href: "/reports/dynamic-utilisation", label: "Dynamic Utilisation", icon: BarChart2 },
+  { href: "/reports/delinquency-report", label: "Delinquency Report", icon: AlertTriangle },
 ];
 
 interface AdminSidebarProps {
@@ -34,20 +35,19 @@ export function AdminSidebar({ onClose }: AdminSidebarProps = {}) {
 
   return (
     <aside className="w-64 bg-zinc-950 text-white h-full flex flex-col border-r border-white/15">
-      <div className="h-14 flex items-center px-6 gap-4 shrink-0">
+      <div className="px-6 pt-6 pb-4 shrink-0">
         {onClose && (
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-white transition-colors p-1 rounded"
+            className="float-right text-zinc-400 hover:text-white transition-colors p-1 rounded"
             aria-label="Close menu"
           >
             <X className="h-6 w-6" />
           </button>
         )}
-        <div>
-          <h1 className="text-sm font-bold text-white leading-none">Wingspan</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">Utilisation Tracker</p>
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/wingspan-logo.svg" alt="Wingspan" className="w-full h-auto" />
+        <p className="text-sm text-white mt-1.5">Utilisation Tracker</p>
       </div>
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map(({ href, label, icon: Icon }) => (
