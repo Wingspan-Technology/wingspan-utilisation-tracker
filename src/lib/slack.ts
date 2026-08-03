@@ -16,16 +16,27 @@ export function verifySlackRequest(
   timestamp: string | null,
   signature: string | null
 ): boolean {
-  if (!timestamp || !signature) return false;
+  if (!timestamp || !signature) {
+    console.error("[slack verify] missing timestamp or signature", { timestamp, signature });
+    return false;
+  }
 
   const ts = Number(timestamp);
-  if (!Number.isFinite(ts) || Math.abs(Date.now() / 1000 - ts) > 60 * 5) return false;
+  const skew = Math.abs(Date.now() / 1000 - ts);
+  if (!Number.isFinite(ts) || skew > 60 * 5) {
+    console.error("[slack verify] timestamp check failed", { timestamp, skew });
+    return false;
+  }
 
   const signingSecret = process.env.SLACK_SIGNING_SECRET;
-  if (!signingSecret) return false;
+  if (!signingSecret) {
+    console.error("[slack verify] SLACK_SIGNING_SECRET not set");
+    return false;
+  }
 
   const base = `v0:${timestamp}:${rawBody}`;
   const expected = "v0=" + crypto.createHmac("sha256", signingSecret).update(base).digest("hex");
+  console.error("[slack verify]", { received: signature, expected, bodyLen: rawBody.length, secretLen: signingSecret.length });
 
   const a = Buffer.from(expected);
   const b = Buffer.from(signature);
