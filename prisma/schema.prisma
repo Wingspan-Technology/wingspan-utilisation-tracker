@@ -17,6 +17,7 @@ model User {
   role          String    @default("USER")
   isActive      Boolean   @default(true)
   dayRate       Float?
+  slackUserId   String?   @unique
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]

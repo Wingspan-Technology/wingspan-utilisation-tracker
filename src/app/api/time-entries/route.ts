@@ -1,10 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-
-const taskInclude = {
-  project: { include: { client: true } },
-} as const;
+import { createTimeEntry, TimeEntryValidationError, timeEntryInclude } from "@/lib/time-entries";
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
@@ -37,10 +34,7 @@ export async function GET(req: NextRequest) {
 
   const entries = await prisma.timeEntry.findMany({
     where,
-    include: {
-      task: { include: taskInclude },
-      user: { select: { id: true, name: true, email: true } },
-    },
+    include: timeEntryInclude,
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
   });
 
@@ -55,38 +49,17 @@ export async function POST(req: NextRequest) {
 
   const { taskId, date, hours, description, userId: bodyUserId } = await req.json();
 
-  if (!taskId || !date || hours == null) {
-    return Response.json({ error: "Task, date and hours are required" }, { status: 400 });
-  }
-  if (hours <= 0 || hours > 24) {
-    return Response.json({ error: "Hours must be between 0 and 24" }, { status: 400 });
-  }
-
   // Admins may post on behalf of another user by supplying userId in the body.
   const targetUserId =
     session.role === "ADMIN" && bodyUserId ? bodyUserId : session.sub;
 
-  const task = await prisma.task.findUnique({ where: { id: taskId } });
-  if (!task || !task.isActive) {
-    return Response.json({ error: "Invalid or inactive task" }, { status: 400 });
+  try {
+    const entry = await createTimeEntry({ userId: targetUserId, taskId, date, hours, description });
+    return Response.json(entry, { status: 201 });
+  } catch (err) {
+    if (err instanceof TimeEntryValidationError) {
+      return Response.json({ error: err.message }, { status: err.status });
+    }
+    throw err;
   }
-
-  const entry = await prisma.timeEntry.create({
-    data: {
-      userId: targetUserId,
-      taskId,
-      date: new Date(date + "T00:00:00.000Z"),
-      hours: parseFloat(hours),
-      description: description || null,
-    },
-    include: {
-      task: { include: taskInclude },
-      user: { select: { id: true, name: true, email: true } },
-    },
-  });
-
-  return Response.json(
-    { ...entry, date: entry.date.toISOString().split("T")[0] },
-    { status: 201 }
-  );
 }
