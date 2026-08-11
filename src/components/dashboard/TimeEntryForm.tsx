@@ -135,6 +135,8 @@ export function TimeEntryForm({
   const [loading, setLoading] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const [selectedDevUserId, setSelectedDevUserId] = useState("");
+  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const today = format(new Date(), "yyyy-MM-dd");
   const displayDate = format(
@@ -156,10 +158,48 @@ export function TimeEntryForm({
   });
 
   useEffect(() => {
-    fetch("/api/tasks")
+    fetch("/api/clients")
+      .then((r) => r.ok && r.json())
+      .then(
+        (d: { id: string; name: string; isActive: boolean }[] | false) =>
+          d &&
+          setClients(
+            d
+              .filter((c) => c.isActive)
+              .map((c) => ({ id: c.id, name: c.name }))
+              .sort((a, b) => a.name.localeCompare(b.name)),
+          ),
+      );
+  }, []);
+
+  useEffect(() => {
+    if (!selectedClientId) {
+      setProjects([]);
+      return;
+    }
+    fetch(`/api/projects?clientId=${selectedClientId}`)
+      .then((r) => r.ok && r.json())
+      .then(
+        (d: { id: string; name: string; isActive: boolean }[] | false) =>
+          d &&
+          setProjects(
+            d
+              .filter((p) => p.isActive)
+              .map((p) => ({ id: p.id, name: p.name }))
+              .sort((a, b) => a.name.localeCompare(b.name)),
+          ),
+      );
+  }, [selectedClientId]);
+
+  useEffect(() => {
+    if (!selectedProjectId) {
+      setTasks([]);
+      return;
+    }
+    fetch(`/api/tasks?projectId=${selectedProjectId}`)
       .then((r) => r.ok && r.json())
       .then((d) => d && setTasks(d));
-  }, []);
+  }, [selectedProjectId]);
 
   useEffect(() => {
     if (open) {
@@ -189,41 +229,9 @@ export function TimeEntryForm({
     });
   }
 
-  const activeTasks = tasks.filter((t) => t.isActive);
-
-  const clients = (() => {
-    const seen = new Set<string>();
-    return activeTasks
-      .reduce<{ id: string; name: string }[]>((acc, t) => {
-        if (!seen.has(t.project.client.id)) {
-          seen.add(t.project.client.id);
-          acc.push({ id: t.project.client.id, name: t.project.client.name });
-        }
-        return acc;
-      }, [])
-      .sort((a, b) => a.name.localeCompare(b.name));
-  })();
-
-  const filteredProjects = (() => {
-    if (!selectedClientId) return [];
-    const seen = new Set<string>();
-    return activeTasks
-      .filter((t) => t.project.client.id === selectedClientId)
-      .reduce<{ id: string; name: string }[]>((acc, t) => {
-        if (!seen.has(t.project.id)) {
-          seen.add(t.project.id);
-          acc.push({ id: t.project.id, name: t.project.name });
-        }
-        return acc;
-      }, [])
-      .sort((a, b) => a.name.localeCompare(b.name));
-  })();
-
-  const filteredTasks = selectedProjectId
-    ? activeTasks
-        .filter((t) => t.project.id === selectedProjectId)
-        .sort((a, b) => a.name.localeCompare(b.name))
-    : [];
+  const filteredTasks = tasks
+    .filter((t) => t.isActive)
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const parsedHours = parseFloat(form.hours);
   const errors = {
@@ -291,7 +299,7 @@ export function TimeEntryForm({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 pt-3">
-        <div className="flex-1 overflow-y-auto space-y-7 pr-1">
+        <div className="flex-1 overflow-y-auto space-y-7 pr-1 scrollbar-thin">
           {/* Developer */}
           {showDeveloperPicker && (
             <div className="space-y-1.5">
@@ -332,7 +340,7 @@ export function TimeEntryForm({
           <div className="space-y-1.5">
             <Label>Project *</Label>
             <ListPicker
-              items={filteredProjects}
+              items={projects}
               value={selectedProjectId}
               disabled={!selectedClientId}
               hasError={attempted && errors.project}
