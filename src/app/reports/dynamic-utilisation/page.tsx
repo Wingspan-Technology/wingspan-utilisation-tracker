@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { ReportChart } from "./ReportChart";
-import type { ProjectRow } from "./ReportChart";
+import type { ProjectRow, EntryDetail } from "./ReportChart";
 
 export default async function DeveloperSummaryPage({
   searchParams,
@@ -73,7 +73,7 @@ export default async function DeveloperSummaryPage({
           project: { include: { client: true } },
         },
       },
-      user: { select: { dayRate: true } },
+      user: { select: { name: true, dayRate: true } },
     },
   });
 
@@ -140,9 +140,25 @@ export default async function DeveloperSummaryPage({
     })),
   }));
 
+  const entryDetails: EntryDetail[] = entries.map((entry) => {
+    const dayRate = entry.user?.dayRate;
+    const cost = dayRate != null ? (entry.hours / 8) * dayRate : null;
+    return {
+      developerName: entry.user?.name ?? "Unknown",
+      clientName: entry.task.project.client.name,
+      projectName: entry.task.project.name,
+      taskName: entry.task.name,
+      date: entry.date.toISOString(),
+      hours: entry.hours,
+      cost,
+      isBillable: entry.task.isBillable,
+    };
+  });
+
   return (
     <ReportChart
       rows={rows}
+      entries={entryDetails}
       developers={developers}
       clients={clients}
       months={months}

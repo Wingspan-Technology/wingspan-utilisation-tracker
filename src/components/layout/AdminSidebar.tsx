@@ -14,7 +14,7 @@ const navItems = [
 ];
 
 const reportItems = [
-  { href: "/reports/dynamic-utilisation", label: "Dynamic Utilisation", icon: BarChart2 },
+  { href: "/reports/dynamic-utilisation", label: "Utilisation Report", icon: BarChart2 },
   { href: "/reports/delinquency-report", label: "Delinquency Report", icon: AlertTriangle },
 ];
 

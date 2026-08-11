@@ -1,10 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Banknote, ChevronDown, ChevronRight, Leaf } from "lucide-react";
+import { format } from "date-fns";
+import { Banknote, ChevronDown, ChevronLeft, ChevronRight, Info, Leaf } from "lucide-react";
 import { FilterSelect } from "@/components/ui/filter-select";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const BILLABLE = "#378ADD";
 const NON_BILLABLE = "#1D9E75";
@@ -37,10 +45,28 @@ type ClientGroup = {
   projects: ProjectRow[];
 };
 
+export type EntryDetail = {
+  developerName: string;
+  clientName: string;
+  projectName: string;
+  taskName: string;
+  date: string;
+  hours: number;
+  cost: number | null;
+  isBillable: boolean;
+};
+
+type DetailFilter = {
+  clientName: string;
+  projectName?: string;
+  taskName?: string;
+};
+
 type ViewMode = "days" | "cost";
 
 type Props = {
   rows: ProjectRow[];
+  entries: EntryDetail[];
   developers: { id: string; name: string }[];
   clients: { id: string; name: string }[];
   months: string[];
@@ -58,10 +84,16 @@ function fmtCost(n: number): string {
   return "£" + Math.round(n).toLocaleString("en-GB");
 }
 
-export function ReportChart({ rows, developers, clients, months, selectedDeveloper, selectedClient, selectedMonth, selectedYear }: Props) {
+export function ReportChart({ rows, entries, developers, clients, months, selectedDeveloper, selectedClient, selectedMonth, selectedYear }: Props) {
   const router = useRouter();
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<ViewMode>("days");
+  const [detailFilter, setDetailFilter] = useState<DetailFilter | null>(null);
+  const [detailPage, setDetailPage] = useState(0);
+
+  useEffect(() => {
+    setDetailPage(0);
+  }, [detailFilter]);
 
   const years = [...new Set(months.map((m) => m.split("-")[0]))].sort();
   const currentYear = selectedMonth ? selectedMonth.split("-")[0] : selectedYear;
@@ -110,6 +142,30 @@ export function ReportChart({ rows, developers, clients, months, selectedDevelop
   function fmt(days: number, cost: number): string {
     return viewMode === "cost" ? fmtCost(cost) : fmtDays(days);
   }
+
+  const detailEntries = detailFilter
+    ? entries
+        .filter(
+          (e) =>
+            e.clientName === detailFilter.clientName &&
+            (!detailFilter.projectName || e.projectName === detailFilter.projectName) &&
+            (!detailFilter.taskName || e.taskName === detailFilter.taskName)
+        )
+        .sort((a, b) => b.date.localeCompare(a.date))
+    : [];
+  const detailTitle = detailFilter
+    ? [detailFilter.clientName, detailFilter.projectName, detailFilter.taskName].filter(Boolean).join(" · ")
+    : "";
+  const detailTotalHours = detailEntries.reduce((s, e) => s + e.hours, 0);
+  const detailTotalCost = detailEntries.reduce((s, e) => s + (e.cost ?? 0), 0);
+  const showProjectCol = !!detailFilter && !detailFilter.projectName;
+  const showTaskCol = !!detailFilter && !detailFilter.taskName;
+  const DETAIL_PAGE_SIZE = 20;
+  const detailPageCount = Math.max(1, Math.ceil(detailEntries.length / DETAIL_PAGE_SIZE));
+  const pagedDetailEntries = detailEntries.slice(
+    detailPage * DETAIL_PAGE_SIZE,
+    detailPage * DETAIL_PAGE_SIZE + DETAIL_PAGE_SIZE
+  );
 
   const developerOptions = developers.map((d) => ({ value: d.id, label: d.name }));
   const clientOptions = clients.map((c) => ({ value: c.id, label: c.name }));
@@ -163,7 +219,7 @@ export function ReportChart({ rows, developers, clients, months, selectedDevelop
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">Dynamic Utilisation Report</h1>
+      <h1 className="text-2xl font-bold text-foreground">Utilisation Report</h1>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -256,7 +312,17 @@ export function ReportChart({ rows, developers, clients, months, selectedDevelop
             return (
               <div key={client.name} className="bg-card rounded-lg border border-border overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/20">
-                  <span className="font-semibold text-foreground">{client.name}</span>
+                  <span className="flex items-center gap-1.5 font-semibold text-foreground">
+                    {client.name}
+                    <button
+                      type="button"
+                      aria-label={`Show who worked on ${client.name}`}
+                      onClick={() => setDetailFilter({ clientName: client.name })}
+                      className="hidden sm:inline-flex text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Info className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
                   <div className="flex items-center gap-5 text-sm">
                     <span className="flex items-center gap-1.5 font-medium tabular-nums" style={{ color: BILLABLE }}>
                       <Banknote className="h-3.5 w-3.5 shrink-0" /> {fmt(client.billableDays, client.billableCost)}
@@ -293,6 +359,17 @@ export function ReportChart({ rows, developers, clients, months, selectedDevelop
                                 ? <ChevronDown className="h-3.5 w-3.5 shrink-0" />
                                 : <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
                               {proj.projectName}
+                              <button
+                                type="button"
+                                aria-label={`Show who worked on ${proj.projectName}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDetailFilter({ clientName: client.name, projectName: proj.projectName });
+                                }}
+                                className="hidden sm:inline-flex hover:text-foreground transition-colors"
+                              >
+                                <Info className="h-3.5 w-3.5" />
+                              </button>
                             </span>
                             <div className="flex items-center gap-5 text-xs">
                               <span className="flex items-center gap-1 tabular-nums" style={{ color: BILLABLE }}>
@@ -324,7 +401,23 @@ export function ReportChart({ rows, developers, clients, months, selectedDevelop
                               return (
                                 <div key={task.taskName} className="px-8 py-2 space-y-1.5">
                                   <div className="flex items-center justify-between">
-                                    <span className="text-xs text-muted-foreground">{task.taskName}</span>
+                                    <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                      {task.taskName}
+                                      <button
+                                        type="button"
+                                        aria-label={`Show who worked on ${task.taskName}`}
+                                        onClick={() =>
+                                          setDetailFilter({
+                                            clientName: client.name,
+                                            projectName: proj.projectName,
+                                            taskName: task.taskName,
+                                          })
+                                        }
+                                        className="hidden sm:inline-flex hover:text-foreground transition-colors"
+                                      >
+                                        <Info className="h-3.5 w-3.5" />
+                                      </button>
+                                    </span>
                                     <span
                                       className="flex items-center gap-1 text-xs tabular-nums"
                                       style={{ color: task.isBillable ? BILLABLE : NON_BILLABLE }}
@@ -357,6 +450,71 @@ export function ReportChart({ rows, developers, clients, months, selectedDevelop
           })}
         </div>
       )}
+
+      <Dialog open={!!detailFilter} onOpenChange={(open) => !open && setDetailFilter(null)}>
+        <DialogContent className="max-w-2xl sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{detailTitle}</DialogTitle>
+            <DialogDescription>
+              {detailTotalHours}h total · {fmtCost(detailTotalCost)}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto scrollbar-thin -mx-1 px-1">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs text-muted-foreground border-b border-border">
+                  <th className="py-2 pr-3 font-medium">Developer</th>
+                  {showProjectCol && <th className="py-2 pr-3 font-medium">Project</th>}
+                  {showTaskCol && <th className="py-2 pr-3 font-medium">Task</th>}
+                  <th className="py-2 pr-3 font-medium">Date</th>
+                  <th className="py-2 pr-3 font-medium text-right">Hours</th>
+                  <th className="py-2 font-medium text-right">Cost</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/50">
+                {pagedDetailEntries.map((e, i) => (
+                  <tr key={detailPage * DETAIL_PAGE_SIZE + i}>
+                    <td className="py-2 pr-3 font-medium text-foreground">{e.developerName}</td>
+                    {showProjectCol && <td className="py-2 pr-3 text-muted-foreground">{e.projectName}</td>}
+                    {showTaskCol && <td className="py-2 pr-3 text-muted-foreground">{e.taskName}</td>}
+                    <td className="py-2 pr-3 text-muted-foreground tabular-nums">
+                      {format(new Date(e.date), "d MMM yyyy")}
+                    </td>
+                    <td className="py-2 pr-3 text-right tabular-nums">{e.hours}h</td>
+                    <td className="py-2 text-right tabular-nums">{e.cost != null ? fmtCost(e.cost) : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {detailEntries.length === 0 && (
+              <p className="text-center text-muted-foreground py-8">No time entries found.</p>
+            )}
+          </div>
+          {detailEntries.length > DETAIL_PAGE_SIZE && (
+            <div className="flex items-center justify-between pt-1 text-sm text-muted-foreground">
+              <button
+                type="button"
+                onClick={() => setDetailPage((p) => Math.max(0, p - 1))}
+                disabled={detailPage === 0}
+                className="flex items-center gap-1 disabled:opacity-30 disabled:cursor-not-allowed hover:text-foreground transition-colors"
+              >
+                <ChevronLeft className="h-4 w-4" /> Prev
+              </button>
+              <span>
+                Page {detailPage + 1} of {detailPageCount}
+              </span>
+              <button
+                type="button"
+                onClick={() => setDetailPage((p) => Math.min(detailPageCount - 1, p + 1))}
+                disabled={detailPage >= detailPageCount - 1}
+                className="flex items-center gap-1 disabled:opacity-30 disabled:cursor-not-allowed hover:text-foreground transition-colors"
+              >
+                Next <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
