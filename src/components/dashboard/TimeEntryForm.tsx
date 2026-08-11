@@ -138,6 +138,8 @@ export function TimeEntryForm({
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [loadingTasks, setLoadingTasks] = useState(false);
   const today = format(new Date(), "yyyy-MM-dd");
   const displayDate = format(
     new Date((entry?.date ?? defaultDate ?? today) + "T00:00:00"),
@@ -177,6 +179,7 @@ export function TimeEntryForm({
       setProjects([]);
       return;
     }
+    setLoadingProjects(true);
     fetch(`/api/projects?clientId=${selectedClientId}`)
       .then((r) => r.ok && r.json())
       .then(
@@ -188,7 +191,8 @@ export function TimeEntryForm({
               .map((p) => ({ id: p.id, name: p.name }))
               .sort((a, b) => a.name.localeCompare(b.name)),
           ),
-      );
+      )
+      .finally(() => setLoadingProjects(false));
   }, [selectedClientId]);
 
   useEffect(() => {
@@ -196,9 +200,11 @@ export function TimeEntryForm({
       setTasks([]);
       return;
     }
+    setLoadingTasks(true);
     fetch(`/api/tasks?projectId=${selectedProjectId}`)
       .then((r) => r.ok && r.json())
-      .then((d) => d && setTasks(d));
+      .then((d) => d && setTasks(d))
+      .finally(() => setLoadingTasks(false));
   }, [selectedProjectId]);
 
   useEffect(() => {
@@ -232,6 +238,9 @@ export function TimeEntryForm({
   const filteredTasks = tasks
     .filter((t) => t.isActive)
     .sort((a, b) => a.name.localeCompare(b.name));
+
+  const noProjects = !!selectedClientId && !loadingProjects && projects.length === 0;
+  const noTasks = !!selectedProjectId && !loadingTasks && filteredTasks.length === 0;
 
   const parsedHours = parseFloat(form.hours);
   const errors = {
@@ -342,16 +351,18 @@ export function TimeEntryForm({
             <ListPicker
               items={projects}
               value={selectedProjectId}
-              disabled={!selectedClientId}
-              hasError={attempted && errors.project}
+              disabled={!selectedClientId || noProjects}
+              hasError={(attempted && errors.project) || noProjects}
               onChange={(id) => {
                 setSelectedProjectId(id);
                 setForm((f) => ({ ...f, taskId: "" }));
               }}
             />
-            {attempted && errors.project
-              ? <FieldError />
-              : <p className="text-xs text-muted-foreground">The project this time belongs to</p>
+            {noProjects
+              ? <p className="text-xs text-destructive mt-1">No projects configured</p>
+              : attempted && errors.project
+                ? <FieldError />
+                : <p className="text-xs text-muted-foreground">The project this time belongs to</p>
             }
           </div>
 
@@ -361,13 +372,15 @@ export function TimeEntryForm({
             <TaskPicker
               tasks={filteredTasks}
               value={form.taskId}
-              disabled={!selectedProjectId}
-              hasError={attempted && errors.task}
+              disabled={!selectedProjectId || noTasks}
+              hasError={(attempted && errors.task) || noTasks}
               onChange={(id) => setForm((f) => ({ ...f, taskId: id }))}
             />
-            {attempted && errors.task
-              ? <FieldError />
-              : <p className="text-xs text-muted-foreground">The type of work carried out</p>
+            {noTasks
+              ? <p className="text-xs text-destructive mt-1">No tasks configured</p>
+              : attempted && errors.task
+                ? <FieldError />
+                : <p className="text-xs text-muted-foreground">The type of work carried out</p>
             }
           </div>
 
