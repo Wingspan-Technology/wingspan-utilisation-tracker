@@ -10,7 +10,7 @@ async function buildMissedDaysResponse(slackUserId: string) {
     };
   }
 
-  const missedDays = await getMissedWeekdays(user.id);
+  const missedDays = await getMissedWeekdays(user.id, { includeToday: true });
   return { response_type: "ephemeral", blocks: buildMissedDaysBlocks(missedDays) };
 }
 

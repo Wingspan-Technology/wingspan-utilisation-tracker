@@ -53,13 +53,17 @@ export async function resolveAppUser(slackUserId: string) {
   return user;
 }
 
-// A "missed day" is a weekday, strictly before today, with no TimeEntry for the user.
-// Returned oldest-first as yyyy-MM-dd strings.
-export async function getMissedWeekdays(userId: string, businessDays = 14): Promise<string[]> {
+// A "missed day" is a weekday, strictly before today (or including today when
+// includeToday is set), with no TimeEntry for the user. Returned oldest-first as
+// yyyy-MM-dd strings.
+export async function getMissedWeekdays(
+  userId: string,
+  { businessDays = 14, includeToday = false }: { businessDays?: number; includeToday?: boolean } = {}
+): Promise<string[]> {
   const candidates: string[] = [];
   const cursor = new Date();
   cursor.setUTCHours(0, 0, 0, 0);
-  cursor.setUTCDate(cursor.getUTCDate() - 1);
+  if (!includeToday) cursor.setUTCDate(cursor.getUTCDate() - 1);
 
   while (candidates.length < businessDays) {
     const day = cursor.getUTCDay();
@@ -90,7 +94,7 @@ export function buildMissedDaysBlocks(missedDays: string[]) {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: ":white_check_mark: You're all caught up — no missed weekdays in the last two weeks.",
+          text: ":white_check_mark: You're all caught up — no unlogged weekdays in the last two weeks.",
         },
       },
     ];
@@ -101,7 +105,7 @@ export function buildMissedDaysBlocks(missedDays: string[]) {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `You're missing utilisation entries for *${missedDays.length}* day${missedDays.length === 1 ? "" : "s"}. Pick one to log:`,
+        text: `You don't have a logged entry for *${missedDays.length}* day${missedDays.length === 1 ? "" : "s"}. Pick one to log:`,
       },
     },
   ];
