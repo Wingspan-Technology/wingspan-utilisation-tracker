@@ -31,19 +31,19 @@ export async function POST(req: NextRequest) {
   // Ack immediately — Slack requires a response within 3s, but the first DB query
   // after Neon's compute has been idle can take over a second on its own. Deliver
   // the real content asynchronously via response_url instead of risking the ack window.
-  console.error("[deferred] scheduling background work for", slackUserId);
   buildMissedDaysResponse(slackUserId)
-    .then((body) => {
-      console.error("[deferred] posting to response_url", responseUrl, JSON.stringify(body).slice(0, 200));
-      return fetch(responseUrl, {
+    .then((body) =>
+      fetch(responseUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
-      });
-    })
+      })
+    )
     .then((res) => res.text())
-    .then((text) => console.error("[deferred] response_url replied", text))
-    .catch((err) => console.error("[deferred] Failed to deliver /timesheet response:", err));
+    .then((text) => {
+      if (text !== "ok") console.error("[timesheet] response_url rejected payload:", text);
+    })
+    .catch((err) => console.error("[timesheet] Failed to deliver /timesheet response:", err));
 
   return Response.json({ response_type: "ephemeral", text: "Checking your missed days…" });
 }

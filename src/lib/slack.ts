@@ -113,7 +113,9 @@ export function buildMissedDaysBlocks(missedDays: string[]) {
       elements: missedDays.slice(i, i + MAX_BUTTONS_PER_BLOCK).map((date) => ({
         type: "button",
         text: { type: "plain_text", text: format(new Date(date + "T00:00:00"), "EEE d MMM") },
-        action_id: "select_missed_day",
+        // action_id must be unique within the containing block — Slack rejects the whole
+        // payload with "invalid_blocks" if multiple buttons in one actions block share one.
+        action_id: `select_missed_day_${date}`,
         value: date,
       })),
     });

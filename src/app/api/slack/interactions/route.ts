@@ -36,7 +36,7 @@ async function handleBlockActions(payload: SlackInteractionPayload) {
   if (!action) return;
   const slack = getSlackClient();
 
-  if (action.action_id === "select_missed_day" && payload.trigger_id && action.value) {
+  if (action.action_id.startsWith("select_missed_day_") && payload.trigger_id && action.value) {
     await slack.views.open({
       trigger_id: payload.trigger_id,
       view: (await buildEntryModalView({ date: action.value })) as never,
