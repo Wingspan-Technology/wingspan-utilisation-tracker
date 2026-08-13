@@ -13,12 +13,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ListPicker } from "@/components/ui/list-picker";
+import { TIMEZONES } from "@/lib/timezones";
 import type { Role, User } from "@/types";
 
 const ROLE_ITEMS = [
   { id: "USER", name: "Developer" },
   { id: "ADMIN", name: "Admin" },
 ];
+
+const TIMEZONE_ITEMS = TIMEZONES.map((tz) => ({ id: tz, name: tz }));
 
 interface UserFormProps {
   open: boolean;
@@ -38,6 +41,7 @@ export function UserForm({ open, onOpenChange, user, onSuccess, onDelete }: User
     isActive: user?.isActive ?? true,
     dayRate: user?.dayRate?.toString() ?? "",
     fixedPrice: user?.dayRate == null && !!user,
+    timezone: user?.timezone ?? "Europe/London",
   });
 
   useEffect(() => {
@@ -48,6 +52,7 @@ export function UserForm({ open, onOpenChange, user, onSuccess, onDelete }: User
       isActive: user?.isActive ?? true,
       dayRate: user?.dayRate?.toString() ?? "",
       fixedPrice: user?.dayRate == null && !!user,
+      timezone: user?.timezone ?? "Europe/London",
     });
   }, [open]); // eslint-disable-line
 
@@ -59,6 +64,7 @@ export function UserForm({ open, onOpenChange, user, onSuccess, onDelete }: User
       isActive: user?.isActive ?? true,
       dayRate: user?.dayRate?.toString() ?? "",
       fixedPrice: user?.dayRate == null && !!user,
+      timezone: user?.timezone ?? "Europe/London",
     });
   }
 
@@ -72,6 +78,7 @@ export function UserForm({ open, onOpenChange, user, onSuccess, onDelete }: User
         role: form.role,
         isActive: form.isActive,
         dayRate: form.fixedPrice ? null : (form.dayRate !== "" ? parseFloat(form.dayRate) : null),
+        timezone: form.timezone,
       };
 
       const res = await fetch(
@@ -132,6 +139,15 @@ export function UserForm({ open, onOpenChange, user, onSuccess, onDelete }: User
               value={form.role}
               onChange={(id) => setForm({ ...form, role: id as Role })}
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Timezone</Label>
+            <ListPicker
+              items={TIMEZONE_ITEMS}
+              value={form.timezone}
+              onChange={(id) => setForm({ ...form, timezone: id })}
+            />
+            <p className="text-xs text-muted-foreground">Used to send the 5pm timesheet reminder at their local time.</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="dayRate">Day Rate (£)</Label>

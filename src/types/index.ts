@@ -7,6 +7,7 @@ export interface User {
   role: Role;
   isActive: boolean;
   dayRate: number | null;
+  timezone: string;
   createdAt: string;
 }
 

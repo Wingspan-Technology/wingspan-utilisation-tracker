@@ -122,6 +122,30 @@ export function buildMissedDaysBlocks(missedDays: string[]) {
   return blocks;
 }
 
+// Reuses the "select_missed_day" action — its handler already just opens the Log
+// Time modal for whatever date is in `value`, which is exactly what a same-day
+// end-of-day nudge needs too.
+export function buildTimesheetReminderBlocks(date: string) {
+  return [
+    {
+      type: "section",
+      text: { type: "mrkdwn", text: ":clock5: It's 5pm — don't forget to log today's time!" },
+    },
+    {
+      type: "actions",
+      elements: [
+        {
+          type: "button",
+          text: { type: "plain_text", text: "Log Time" },
+          style: "primary",
+          action_id: "select_missed_day",
+          value: date,
+        },
+      ],
+    },
+  ];
+}
+
 function selectOption(id: string, label: string) {
   return { text: { type: "plain_text" as const, text: label.slice(0, 75) }, value: id };
 }

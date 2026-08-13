@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { TIMEZONES } from "@/lib/timezones";
 
 export async function GET() {
   const session = await getSession();
@@ -16,6 +17,7 @@ export async function GET() {
       role: true,
       isActive: true,
       dayRate: true,
+      timezone: true,
       createdAt: true,
     },
     orderBy: { name: "asc" },
@@ -30,10 +32,13 @@ export async function POST(req: NextRequest) {
   if (session.role !== "ADMIN")
     return Response.json({ error: "Forbidden" }, { status: 403 });
 
-  const { email, name, role, isActive, dayRate } = await req.json();
+  const { email, name, role, isActive, dayRate, timezone } = await req.json();
 
   if (!email || !name) {
     return Response.json({ error: "Email and name are required" }, { status: 400 });
+  }
+  if (timezone && !TIMEZONES.includes(timezone)) {
+    return Response.json({ error: "Invalid timezone" }, { status: 400 });
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
@@ -49,6 +54,7 @@ export async function POST(req: NextRequest) {
       role: role === "ADMIN" ? "ADMIN" : "USER",
       isActive: isActive ?? true,
       dayRate: dayRate != null ? parseFloat(dayRate) : null,
+      timezone: timezone || "Europe/London",
     },
     select: {
       id: true,
@@ -57,6 +63,7 @@ export async function POST(req: NextRequest) {
       role: true,
       isActive: true,
       dayRate: true,
+      timezone: true,
       createdAt: true,
     },
   });
