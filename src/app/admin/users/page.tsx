@@ -92,7 +92,8 @@ export default function UsersPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
+              <TableHead className="hidden sm:table-cell">Email</TableHead>
+              <TableHead className="hidden sm:table-cell">Timezone</TableHead>
               <TableHead>Day Rate</TableHead>
             </TableRow>
           </TableHeader>
@@ -101,13 +102,14 @@ export default function UsersPage() {
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
                   <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-44" /></TableCell>
+                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-4 w-44" /></TableCell>
+                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-4 w-32" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                 </TableRow>
               ))
             ) : visibleUsers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                   {showInactive ? "No inactive users." : "No users yet."}
                 </TableCell>
               </TableRow>
@@ -136,7 +138,8 @@ export default function UsersPage() {
                     {user.name}
                   </div>
                 </TableCell>
-                <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                <TableCell className="hidden text-muted-foreground sm:table-cell">{user.email}</TableCell>
+                <TableCell className="hidden text-muted-foreground sm:table-cell">{user.timezone}</TableCell>
                 <TableCell className="text-muted-foreground">
                   {user.dayRate != null ? `£${user.dayRate.toLocaleString()}` : <span className="text-muted-foreground/50">N/A</span>}
                 </TableCell>
