@@ -128,9 +128,12 @@ export function buildMissedDaysBlocks(missedDays: string[]) {
   return blocks;
 }
 
-// Reuses the "select_missed_day" action — its handler already just opens the Log
+// Reuses the "select_missed_day_*" action — its handler already just opens the Log
 // Time modal for whatever date is in `value`, which is exactly what a same-day
-// end-of-day nudge needs too.
+// end-of-day nudge needs too. The prefix must match what handleBlockActions matches on
+// (see interactions/route.ts) — it changed from a bare "select_missed_day" to a
+// per-date "select_missed_day_<date>" id to satisfy Slack's per-block action_id
+// uniqueness requirement.
 export function buildTimesheetReminderBlocks(date: string) {
   return [
     {
@@ -144,7 +147,7 @@ export function buildTimesheetReminderBlocks(date: string) {
           type: "button",
           text: { type: "plain_text", text: "Log Time" },
           style: "primary",
-          action_id: "select_missed_day",
+          action_id: `select_missed_day_${date}`,
           value: date,
         },
       ],
