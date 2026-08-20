@@ -27,6 +27,7 @@ export type TaskRow = {
 };
 
 export type ProjectRow = {
+  developerName: string;
   clientName: string;
   projectName: string;
   billableDays: number;
@@ -36,7 +37,7 @@ export type ProjectRow = {
   tasks: TaskRow[];
 };
 
-type ClientGroup = {
+type DeveloperGroup = {
   name: string;
   billableDays: number;
   nonBillableDays: number;
@@ -57,7 +58,7 @@ export type EntryDetail = {
 };
 
 type DetailFilter = {
-  clientName: string;
+  developerName: string;
   projectName?: string;
   taskName?: string;
 };
@@ -107,7 +108,7 @@ export function ReportChart({ rows, entries, developers, clients, months, select
     if (params.year) p.set("year", params.year);
     if (params.month) p.set("month", params.month);
     const qs = p.toString();
-    return `/reports/dynamic-utilisation${qs ? `?${qs}` : ""}`;
+    return `/reports/developer-activity${qs ? `?${qs}` : ""}`;
   }
 
   function handleDeveloperChange(id: string) {
@@ -147,14 +148,14 @@ export function ReportChart({ rows, entries, developers, clients, months, select
     ? entries
         .filter(
           (e) =>
-            e.clientName === detailFilter.clientName &&
+            e.developerName === detailFilter.developerName &&
             (!detailFilter.projectName || e.projectName === detailFilter.projectName) &&
             (!detailFilter.taskName || e.taskName === detailFilter.taskName)
         )
         .sort((a, b) => b.date.localeCompare(a.date))
     : [];
   const detailTitle = detailFilter
-    ? [detailFilter.clientName, detailFilter.projectName, detailFilter.taskName].filter(Boolean).join(" · ")
+    ? [detailFilter.developerName, detailFilter.projectName, detailFilter.taskName].filter(Boolean).join(" · ")
     : "";
   const detailTotalHours = detailEntries.reduce((s, e) => s + e.hours, 0);
   const detailTotalCost = detailEntries.reduce((s, e) => s + (e.cost ?? 0), 0);
@@ -175,10 +176,10 @@ export function ReportChart({ rows, entries, developers, clients, months, select
     return { value: mm, label: MONTH_NAMES[parseInt(mm, 10) - 1] };
   });
 
-  const clientMap = new Map<string, ClientGroup>();
+  const developerMap = new Map<string, DeveloperGroup>();
   for (const row of rows) {
-    const g = clientMap.get(row.clientName) ?? {
-      name: row.clientName,
+    const g = developerMap.get(row.developerName) ?? {
+      name: row.developerName,
       billableDays: 0,
       nonBillableDays: 0,
       billableCost: 0,
@@ -190,15 +191,15 @@ export function ReportChart({ rows, entries, developers, clients, months, select
     g.billableCost += row.billableCost;
     g.nonBillableCost += row.nonBillableCost;
     g.projects.push(row);
-    clientMap.set(row.clientName, g);
+    developerMap.set(row.developerName, g);
   }
 
-  const clientGroups = [...clientMap.values()].sort(
+  const developerGroups = [...developerMap.values()].sort(
     (a, b) => b.billableDays + b.nonBillableDays - (a.billableDays + a.nonBillableDays)
   );
-  for (const c of clientGroups) {
-    c.projects.sort((a, b) => b.billableDays + b.nonBillableDays - (a.billableDays + a.nonBillableDays));
-    for (const p of c.projects) {
+  for (const d of developerGroups) {
+    d.projects.sort((a, b) => b.billableDays + b.nonBillableDays - (a.billableDays + a.nonBillableDays));
+    for (const p of d.projects) {
       p.tasks.sort((a, b) => b.days - a.days);
     }
   }
@@ -219,7 +220,7 @@ export function ReportChart({ rows, entries, developers, clients, months, select
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">Client Utilisation Report</h1>
+      <h1 className="text-2xl font-bold text-foreground">Developer Utilisation Report</h1>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -300,24 +301,24 @@ export function ReportChart({ rows, entries, developers, clients, months, select
         </Card>
       </div>
 
-      {/* Client blocks */}
+      {/* Developer blocks */}
       {rows.length === 0 ? (
         <p className="text-center text-muted-foreground py-12">No time entries for this period.</p>
       ) : (
         <div className="space-y-4">
-          {clientGroups.map((client) => {
-            const clientBillable = viewMode === "cost" ? client.billableCost : client.billableDays;
-            const clientNonBillable = viewMode === "cost" ? client.nonBillableCost : client.nonBillableDays;
-            const clientTotal = clientBillable + clientNonBillable;
+          {developerGroups.map((dev) => {
+            const devBillable = viewMode === "cost" ? dev.billableCost : dev.billableDays;
+            const devNonBillable = viewMode === "cost" ? dev.nonBillableCost : dev.nonBillableDays;
+            const devTotal = devBillable + devNonBillable;
             return (
-              <div key={client.name} className="bg-card rounded-lg border border-border overflow-hidden">
+              <div key={dev.name} className="bg-card rounded-lg border border-border overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/20">
                   <span className="flex items-center gap-1.5 font-semibold text-foreground">
-                    {client.name}
+                    {dev.name}
                     <button
                       type="button"
-                      aria-label={`Show who worked on ${client.name}`}
-                      onClick={() => setDetailFilter({ clientName: client.name })}
+                      aria-label={`Show ${dev.name}'s time entries`}
+                      onClick={() => setDetailFilter({ developerName: dev.name })}
                       className="hidden sm:inline-flex text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <Info className="h-3.5 w-3.5" />
@@ -325,20 +326,20 @@ export function ReportChart({ rows, entries, developers, clients, months, select
                   </span>
                   <div className="flex items-center gap-5 text-sm">
                     <span className="flex items-center gap-1.5 font-medium tabular-nums" style={{ color: BILLABLE }}>
-                      <Banknote className="h-3.5 w-3.5 shrink-0" /> {fmt(client.billableDays, client.billableCost)}
+                      <Banknote className="h-3.5 w-3.5 shrink-0" /> {fmt(dev.billableDays, dev.billableCost)}
                     </span>
                     <span className="flex items-center gap-1.5 font-medium tabular-nums" style={{ color: NON_BILLABLE }}>
-                      <Leaf className="h-3.5 w-3.5 shrink-0" /> {fmt(client.nonBillableDays, client.nonBillableCost)}
+                      <Leaf className="h-3.5 w-3.5 shrink-0" /> {fmt(dev.nonBillableDays, dev.nonBillableCost)}
                     </span>
                     <span className="font-semibold text-foreground tabular-nums">
-                      {viewMode === "cost" ? fmtCost(clientTotal) : fmtDays(clientTotal)}
+                      {viewMode === "cost" ? fmtCost(devTotal) : fmtDays(devTotal)}
                     </span>
                   </div>
                 </div>
 
                 <div className="divide-y divide-border">
-                  {client.projects.map((proj) => {
-                    const projKey = `${client.name}::${proj.projectName}`;
+                  {dev.projects.map((proj) => {
+                    const projKey = `${dev.name}::${proj.clientName}::${proj.projectName}`;
                     const expanded = expandedProjects.has(projKey);
                     const projBillable = viewMode === "cost" ? proj.billableCost : proj.billableDays;
                     const projNonBillable = viewMode === "cost" ? proj.nonBillableCost : proj.nonBillableDays;
@@ -348,7 +349,7 @@ export function ReportChart({ rows, entries, developers, clients, months, select
                     const billableFrac = projTotal > 0 ? projBillable / projTotal : 0;
                     const nonBillableFrac = projTotal > 0 ? projNonBillable / projTotal : 0;
                     return (
-                      <div key={proj.projectName}>
+                      <div key={projKey}>
                         <div
                           className="px-4 py-2 space-y-1.5 cursor-pointer hover:bg-muted/10"
                           onClick={() => toggleProject(projKey)}
@@ -358,13 +359,13 @@ export function ReportChart({ rows, entries, developers, clients, months, select
                               {expanded
                                 ? <ChevronDown className="h-3.5 w-3.5 shrink-0" />
                                 : <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
-                              {proj.projectName}
+                              <span className="text-muted-foreground/70">{proj.clientName} ·</span> {proj.projectName}
                               <button
                                 type="button"
-                                aria-label={`Show who worked on ${proj.projectName}`}
+                                aria-label={`Show ${dev.name}'s entries on ${proj.projectName}`}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setDetailFilter({ clientName: client.name, projectName: proj.projectName });
+                                  setDetailFilter({ developerName: dev.name, projectName: proj.projectName });
                                 }}
                                 className="hidden sm:inline-flex hover:text-foreground transition-colors"
                               >
@@ -405,10 +406,10 @@ export function ReportChart({ rows, entries, developers, clients, months, select
                                       {task.taskName}
                                       <button
                                         type="button"
-                                        aria-label={`Show who worked on ${task.taskName}`}
+                                        aria-label={`Show ${dev.name}'s entries on ${task.taskName}`}
                                         onClick={() =>
                                           setDetailFilter({
-                                            clientName: client.name,
+                                            developerName: dev.name,
                                             projectName: proj.projectName,
                                             taskName: task.taskName,
                                           })
@@ -463,7 +464,6 @@ export function ReportChart({ rows, entries, developers, clients, months, select
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs text-muted-foreground border-b border-border">
-                  <th className="py-2 pr-3 font-medium">Developer</th>
                   {showProjectCol && <th className="py-2 pr-3 font-medium">Project</th>}
                   {showTaskCol && <th className="py-2 pr-3 font-medium">Task</th>}
                   <th className="py-2 pr-3 font-medium">Date</th>
@@ -474,7 +474,6 @@ export function ReportChart({ rows, entries, developers, clients, months, select
               <tbody className="divide-y divide-border/50">
                 {pagedDetailEntries.map((e, i) => (
                   <tr key={detailPage * DETAIL_PAGE_SIZE + i}>
-                    <td className="py-2 pr-3 font-medium text-foreground">{e.developerName}</td>
                     {showProjectCol && <td className="py-2 pr-3 text-muted-foreground">{e.projectName}</td>}
                     {showTaskCol && <td className="py-2 pr-3 text-muted-foreground">{e.taskName}</td>}
                     <td className="py-2 pr-3 text-muted-foreground tabular-nums">
