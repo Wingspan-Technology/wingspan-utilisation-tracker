@@ -87,6 +87,7 @@ function fmtCost(n: number): string {
 
 export function ReportChart({ rows, entries, developers, clients, months, selectedDeveloper, selectedClient, selectedMonth, selectedYear }: Props) {
   const router = useRouter();
+  const [expandedDevelopers, setExpandedDevelopers] = useState<Set<string>>(new Set());
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<ViewMode>("days");
   const [detailFilter, setDetailFilter] = useState<DetailFilter | null>(null);
@@ -129,6 +130,15 @@ export function ReportChart({ rows, entries, developers, clients, months, select
     } else {
       router.push(buildUrl({ developer: selectedDeveloper || undefined, client: selectedClient || undefined, year: currentYear || undefined }));
     }
+  }
+
+  function toggleDeveloper(key: string) {
+    setExpandedDevelopers((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   }
 
   function toggleProject(key: string) {
@@ -310,15 +320,25 @@ export function ReportChart({ rows, entries, developers, clients, months, select
             const devBillable = viewMode === "cost" ? dev.billableCost : dev.billableDays;
             const devNonBillable = viewMode === "cost" ? dev.nonBillableCost : dev.nonBillableDays;
             const devTotal = devBillable + devNonBillable;
+            const devExpanded = expandedDevelopers.has(dev.name);
             return (
               <div key={dev.name} className="bg-card rounded-lg border border-border overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/20">
+                <div
+                  className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/20 cursor-pointer hover:bg-muted/30"
+                  onClick={() => toggleDeveloper(dev.name)}
+                >
                   <span className="flex items-center gap-1.5 font-semibold text-foreground">
+                    {devExpanded
+                      ? <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      : <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />}
                     {dev.name}
                     <button
                       type="button"
                       aria-label={`Show ${dev.name}'s time entries`}
-                      onClick={() => setDetailFilter({ developerName: dev.name })}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDetailFilter({ developerName: dev.name });
+                      }}
                       className="hidden sm:inline-flex text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <Info className="h-3.5 w-3.5" />
@@ -337,6 +357,7 @@ export function ReportChart({ rows, entries, developers, clients, months, select
                   </div>
                 </div>
 
+                {devExpanded && (
                 <div className="divide-y divide-border">
                   {dev.projects.map((proj) => {
                     const projKey = `${dev.name}::${proj.clientName}::${proj.projectName}`;
@@ -446,6 +467,7 @@ export function ReportChart({ rows, entries, developers, clients, months, select
                     );
                   })}
                 </div>
+                )}
               </div>
             );
           })}

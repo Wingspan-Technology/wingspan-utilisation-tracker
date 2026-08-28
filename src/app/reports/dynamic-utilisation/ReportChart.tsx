@@ -86,6 +86,7 @@ function fmtCost(n: number): string {
 
 export function ReportChart({ rows, entries, developers, clients, months, selectedDeveloper, selectedClient, selectedMonth, selectedYear }: Props) {
   const router = useRouter();
+  const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<ViewMode>("days");
   const [detailFilter, setDetailFilter] = useState<DetailFilter | null>(null);
@@ -128,6 +129,15 @@ export function ReportChart({ rows, entries, developers, clients, months, select
     } else {
       router.push(buildUrl({ developer: selectedDeveloper || undefined, client: selectedClient || undefined, year: currentYear || undefined }));
     }
+  }
+
+  function toggleClient(key: string) {
+    setExpandedClients((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   }
 
   function toggleProject(key: string) {
@@ -309,15 +319,25 @@ export function ReportChart({ rows, entries, developers, clients, months, select
             const clientBillable = viewMode === "cost" ? client.billableCost : client.billableDays;
             const clientNonBillable = viewMode === "cost" ? client.nonBillableCost : client.nonBillableDays;
             const clientTotal = clientBillable + clientNonBillable;
+            const clientExpanded = expandedClients.has(client.name);
             return (
               <div key={client.name} className="bg-card rounded-lg border border-border overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/20">
+                <div
+                  className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/20 cursor-pointer hover:bg-muted/30"
+                  onClick={() => toggleClient(client.name)}
+                >
                   <span className="flex items-center gap-1.5 font-semibold text-foreground">
+                    {clientExpanded
+                      ? <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      : <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />}
                     {client.name}
                     <button
                       type="button"
                       aria-label={`Show who worked on ${client.name}`}
-                      onClick={() => setDetailFilter({ clientName: client.name })}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDetailFilter({ clientName: client.name });
+                      }}
                       className="hidden sm:inline-flex text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <Info className="h-3.5 w-3.5" />
@@ -336,6 +356,7 @@ export function ReportChart({ rows, entries, developers, clients, months, select
                   </div>
                 </div>
 
+                {clientExpanded && (
                 <div className="divide-y divide-border">
                   {client.projects.map((proj) => {
                     const projKey = `${client.name}::${proj.projectName}`;
@@ -445,6 +466,7 @@ export function ReportChart({ rows, entries, developers, clients, months, select
                     );
                   })}
                 </div>
+                )}
               </div>
             );
           })}
