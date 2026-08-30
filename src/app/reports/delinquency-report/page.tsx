@@ -1,4 +1,5 @@
 import { differenceInCalendarDays, format } from "date-fns";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -64,7 +65,11 @@ export default async function DelinquencyReportPage() {
             ) : (
               rows.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <Link href={`/reports/developer-activity?developer=${user.id}`} className="hover:underline">
+                      {user.name}
+                    </Link>
+                  </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">{user.email}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
                     {user.lastEntryDate != null ? (
