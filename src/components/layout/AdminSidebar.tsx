@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AlertTriangle, BarChart2, Briefcase, Clock, KeyRound, MonitorSmartphone, ScrollText, User, Users, X } from "lucide-react";
+import { AlertTriangle, BarChart2, Briefcase, CalendarClock, Clock, KeyRound, MonitorSmartphone, ScrollText, User, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -16,6 +16,7 @@ const navItems = [
 const reportItems = [
   { href: "/reports/dynamic-utilisation", label: "Client Utilisation", icon: BarChart2 },
   { href: "/reports/developer-activity", label: "Developer Utilisation", icon: User },
+  { href: "/reports/developer-tenure", label: "Developer Tenure", icon: CalendarClock },
   { href: "/reports/delinquency-report", label: "Delinquency Report", icon: AlertTriangle },
 ];
 
