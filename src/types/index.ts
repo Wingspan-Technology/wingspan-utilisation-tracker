@@ -1,12 +1,20 @@
 export type Role = "ADMIN" | "USER";
 
+export interface DeveloperRate {
+  id: string;
+  userId: string;
+  dayRate: number | null;
+  startDate: string;
+  createdAt: string;
+}
+
 export interface User {
   id: string;
   email: string;
   name: string;
   role: Role;
   isActive: boolean;
-  dayRate: number | null;
+  rates: DeveloperRate[];
   timezone: string;
   createdAt: string;
 }

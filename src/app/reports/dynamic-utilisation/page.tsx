@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { rateAt } from "@/lib/rates";
 import { ReportChart } from "./ReportChart";
 import type { ProjectRow, EntryDetail } from "./ReportChart";
 
@@ -73,7 +74,7 @@ export default async function DeveloperSummaryPage({
           project: { include: { client: true } },
         },
       },
-      user: { select: { name: true, dayRate: true } },
+      user: { select: { name: true, rates: { orderBy: { startDate: "asc" } } } },
     },
   });
 
@@ -105,7 +106,7 @@ export default async function DeveloperSummaryPage({
       });
     }
     const acc = map.get(key)!;
-    const dayRate = entry.user?.dayRate;
+    const dayRate = rateAt(entry.user?.rates ?? [], entry.date);
     const entryDays = entry.hours / 8;
     if (entry.task.isBillable) {
       acc.billableHours += entry.hours;
@@ -141,7 +142,7 @@ export default async function DeveloperSummaryPage({
   }));
 
   const entryDetails: EntryDetail[] = entries.map((entry) => {
-    const dayRate = entry.user?.dayRate;
+    const dayRate = rateAt(entry.user?.rates ?? [], entry.date);
     const cost = dayRate != null ? (entry.hours / 8) * dayRate : null;
     return {
       developerName: entry.user?.name ?? "Unknown",

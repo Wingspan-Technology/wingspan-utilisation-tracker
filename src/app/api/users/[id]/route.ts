@@ -13,7 +13,7 @@ export async function PUT(
     return Response.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await params;
-  const { email, name, role, isActive, dayRate, timezone } = await req.json();
+  const { email, name, role, isActive, timezone } = await req.json();
 
   if (timezone && !TIMEZONES.includes(timezone)) {
     return Response.json({ error: "Invalid timezone" }, { status: 400 });
@@ -38,7 +38,6 @@ export async function PUT(
       name: name ?? user.name,
       role: role === "ADMIN" ? "ADMIN" : role === "USER" ? "USER" : user.role,
       isActive: isActive ?? user.isActive,
-      dayRate: dayRate !== undefined ? (dayRate != null ? parseFloat(dayRate) : null) : undefined,
       timezone: timezone ?? user.timezone,
     },
     select: {
@@ -47,7 +46,7 @@ export async function PUT(
       name: true,
       role: true,
       isActive: true,
-      dayRate: true,
+      rates: { orderBy: { startDate: "asc" } },
       timezone: true,
       createdAt: true,
     },

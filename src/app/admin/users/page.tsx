@@ -18,6 +18,7 @@ import {
 import { UserForm } from "@/components/admin/UserForm";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { currentRate } from "@/lib/rates";
 import type { User } from "@/types";
 
 export default function UsersPage() {
@@ -34,9 +35,11 @@ export default function UsersPage() {
   const visibleUsers = users
     .filter((u) => u.isActive !== showInactive)
     .sort((a, b) => {
-      if (a.dayRate == null) return b.dayRate == null ? 0 : 1;
-      if (b.dayRate == null) return -1;
-      return b.dayRate - a.dayRate;
+      const rateA = currentRate(a.rates);
+      const rateB = currentRate(b.rates);
+      if (rateA == null) return rateB == null ? 0 : 1;
+      if (rateB == null) return -1;
+      return rateB - rateA;
     });
 
   async function load() {
@@ -53,7 +56,7 @@ export default function UsersPage() {
       if (idx >= 0) { const next = [...prev]; next[idx] = updated; return next; }
       return [updated, ...prev];
     });
-    setEditUser(null);
+    setEditUser(updated);
   }
 
   function handleDeleteRequest(user: User) {
@@ -141,7 +144,7 @@ export default function UsersPage() {
                 <TableCell className="hidden text-muted-foreground sm:table-cell">{user.email}</TableCell>
                 <TableCell className="hidden text-muted-foreground sm:table-cell">{user.timezone}</TableCell>
                 <TableCell className="text-muted-foreground">
-                  {user.dayRate != null ? `£${user.dayRate.toLocaleString()}` : <span className="text-muted-foreground/50">N/A</span>}
+                  {currentRate(user.rates) != null ? `£${currentRate(user.rates)!.toLocaleString()}` : <span className="text-muted-foreground/50">N/A</span>}
                 </TableCell>
               </TableRow>
             ))}

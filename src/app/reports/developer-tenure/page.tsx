@@ -1,6 +1,7 @@
 import { formatDuration, intervalToDuration, format } from "date-fns";
 import { Banknote, Leaf } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { rateAt } from "@/lib/rates";
 import {
   Table,
   TableBody,
@@ -35,44 +36,57 @@ function formatTenure(start: Date, end: Date): string {
 export default async function DeveloperTenureReportPage() {
   const now = new Date();
 
-  const [users, minDates, billableStats, nonBillableStats] = await Promise.all([
-    prisma.user.findMany({
-      where: { isActive: true, role: "USER" },
-      select: { id: true, name: true, dayRate: true },
-      orderBy: { name: "asc" },
-    }),
-    prisma.timeEntry.groupBy({
-      by: ["userId"],
-      _min: { date: true },
-    }),
-    prisma.timeEntry.groupBy({
-      by: ["userId"],
-      where: { task: { isBillable: true } },
-      _sum: { hours: true },
-    }),
-    prisma.timeEntry.groupBy({
-      by: ["userId"],
-      where: { task: { isBillable: false } },
-      _sum: { hours: true },
-    }),
-  ]);
-  const firstEntryByUser = new Map(minDates.map((s) => [s.userId, s._min.date]));
-  const billableHoursByUser = new Map(billableStats.map((s) => [s.userId, s._sum.hours ?? 0]));
-  const nonBillableHoursByUser = new Map(nonBillableStats.map((s) => [s.userId, s._sum.hours ?? 0]));
+  const users = await prisma.user.findMany({
+    where: { isActive: true, role: "USER" },
+    select: { id: true, name: true, rates: { orderBy: { startDate: "asc" } } },
+    orderBy: { name: "asc" },
+  });
+
+  const entries = await prisma.timeEntry.findMany({
+    where: { userId: { in: users.map((u) => u.id) } },
+    select: { userId: true, date: true, hours: true, task: { select: { isBillable: true } } },
+  });
+
+  const ratesByUser = new Map(users.map((user) => [user.id, user.rates]));
+  const statsByUser = new Map(
+    users.map((user) => [
+      user.id,
+      {
+        firstEntryDate: null as Date | null,
+        billableDays: 0,
+        nonBillableDays: 0,
+        billableCost: null as number | null,
+        nonBillableCost: null as number | null,
+      },
+    ])
+  );
+
+  for (const entry of entries) {
+    const stats = statsByUser.get(entry.userId);
+    if (!stats) continue;
+    if (stats.firstEntryDate == null || entry.date < stats.firstEntryDate) {
+      stats.firstEntryDate = entry.date;
+    }
+    const days = entry.hours / 8;
+    const dayRate = rateAt(ratesByUser.get(entry.userId) ?? [], entry.date);
+    if (entry.task.isBillable) {
+      stats.billableDays += days;
+      if (dayRate != null) stats.billableCost = (stats.billableCost ?? 0) + days * dayRate;
+    } else {
+      stats.nonBillableDays += days;
+      if (dayRate != null) stats.nonBillableCost = (stats.nonBillableCost ?? 0) + days * dayRate;
+    }
+  }
 
   const rows = users
     .map((user) => {
-      const firstEntryDate = firstEntryByUser.get(user.id) ?? null;
-      const billableDays = (billableHoursByUser.get(user.id) ?? 0) / 8;
-      const nonBillableDays = (nonBillableHoursByUser.get(user.id) ?? 0) / 8;
-      const billableCost = user.dayRate != null ? billableDays * user.dayRate : null;
-      const nonBillableCost = user.dayRate != null ? nonBillableDays * user.dayRate : null;
+      const stats = statsByUser.get(user.id)!;
       return {
         ...user,
-        firstEntryDate,
-        totalDays: billableDays + nonBillableDays,
-        billableCost,
-        nonBillableCost,
+        firstEntryDate: stats.firstEntryDate,
+        totalDays: stats.billableDays + stats.nonBillableDays,
+        billableCost: stats.billableCost,
+        nonBillableCost: stats.nonBillableCost,
       };
     })
     .sort((a, b) => {

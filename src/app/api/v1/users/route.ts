@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateApiKeyFromRequest } from "@/lib/api-keys";
+import { currentRate } from "@/lib/rates";
 
 export async function GET(req: NextRequest) {
   const apiKey = await validateApiKeyFromRequest(req);
@@ -21,11 +22,16 @@ export async function GET(req: NextRequest) {
       email: true,
       role: true,
       isActive: true,
-      dayRate: true,
+      rates: { orderBy: { startDate: "asc" } },
       createdAt: true,
     },
     orderBy: { name: "asc" },
   });
 
-  return Response.json({ data: users });
+  const data = users.map(({ rates, ...user }) => ({
+    ...user,
+    dayRate: currentRate(rates),
+  }));
+
+  return Response.json({ data });
 }
