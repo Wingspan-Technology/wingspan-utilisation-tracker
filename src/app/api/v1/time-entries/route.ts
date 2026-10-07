@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateApiKeyFromRequest } from "@/lib/api-keys";
+import { rateAt } from "@/lib/rates";
 
 export async function GET(req: NextRequest) {
   const apiKey = await validateApiKeyFromRequest(req);
@@ -33,7 +34,14 @@ export async function GET(req: NextRequest) {
       where,
       include: {
         task: { include: { project: { include: { client: true } } } },
-        user: { select: { id: true, name: true, email: true } },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            rates: { orderBy: { startDate: "asc" } },
+          },
+        },
       },
       orderBy: [{ date: "desc" }, { createdAt: "desc" }],
       skip: (page - 1) * limit,
@@ -42,7 +50,16 @@ export async function GET(req: NextRequest) {
   ]);
 
   return Response.json({
-    data: entries.map((e) => ({ ...e, date: e.date.toISOString().split("T")[0] })),
+    data: entries.map(({ user, ...e }) => {
+      const dayRate = user ? rateAt(user.rates, e.date) : null;
+      return {
+        ...e,
+        user: user ? { id: user.id, name: user.name, email: user.email } : null,
+        date: e.date.toISOString().split("T")[0],
+        dayRate,
+        cost: dayRate != null ? (e.hours / 8) * dayRate : null,
+      };
+    }),
     meta: { total, page, limit, pages: Math.ceil(total / limit) },
   });
 }

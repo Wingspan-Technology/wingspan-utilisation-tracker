@@ -105,6 +105,9 @@ export function UserForm({ open, onOpenChange, user, onSuccess, onDelete }: User
     e.preventDefault();
     setLoading(true);
     try {
+      // An unconfirmed rate row is saved first, so Save Changes commits everything.
+      if (isAddingRate && !(await saveRate())) return;
+
       const body = {
         name: form.name,
         email: form.email,
@@ -142,8 +145,9 @@ export function UserForm({ open, onOpenChange, user, onSuccess, onDelete }: User
     }
   }
 
-  async function handleSaveRate() {
-    if (!user) return;
+  /** Posts the draft rate row. Returns true on success; shows a toast on failure. */
+  async function saveRate(): Promise<boolean> {
+    if (!user) return false;
     setSavingRate(true);
     try {
       const res = await fetch(`/api/users/${user.id}/rates`, {
@@ -157,15 +161,20 @@ export function UserForm({ open, onOpenChange, user, onSuccess, onDelete }: User
       const data = await res.json();
       if (!res.ok) {
         toast.error(data.error || "Failed to add rate");
-        return;
+        return false;
       }
       setRates(data as DeveloperRate[]);
       onSuccess({ ...user, rates: data as DeveloperRate[] });
       setIsAddingRate(false);
-      toast.success("Rate added");
+      setDraftRate({ dayRate: "", fixedPrice: false, startDate: todayInput() });
+      return true;
     } finally {
       setSavingRate(false);
     }
+  }
+
+  async function handleSaveRate() {
+    if (await saveRate()) toast.success("Rate added");
   }
 
   async function handleDeleteRate() {
@@ -474,7 +483,7 @@ export function UserForm({ open, onOpenChange, user, onSuccess, onDelete }: User
 
           {isAddingRate && (
             <p className="text-xs text-muted-foreground">
-              Confirm (✓) or cancel (✕) the new rate above before saving.
+              Save Changes will also add the new rate above. Use ✕ to discard it.
             </p>
           )}
 
@@ -494,7 +503,7 @@ export function UserForm({ open, onOpenChange, user, onSuccess, onDelete }: User
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={loading || isAddingRate}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading || isAddingRate}>
+              <Button type="submit" disabled={loading || savingRate}>
                 {loading ? "Saving…" : isEdit ? "Save Changes" : "Add User"}
               </Button>
             </div>

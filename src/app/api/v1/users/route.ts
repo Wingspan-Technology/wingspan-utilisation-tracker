@@ -31,6 +31,10 @@ export async function GET(req: NextRequest) {
   const data = users.map(({ rates, ...user }) => ({
     ...user,
     dayRate: currentRate(rates),
+    rates: rates.map((r) => ({
+      dayRate: r.dayRate,
+      startDate: r.startDate.toISOString().split("T")[0],
+    })),
   }));
 
   return Response.json({ data });
